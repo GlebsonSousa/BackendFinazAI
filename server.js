@@ -15,9 +15,12 @@ app.get ("/", async (req, res) => {
 app.post ("/recebemensagem", async (req, res) => {
     const { numero, mensagem } = req.body;
 
+    const resposta = 'Sua mensagem foi recebida'
+
     return res.status(200).json({
         numero,
         mensagem,
+        resposta,
     })
 })
 
