@@ -17,7 +17,7 @@ function token (req, res, next) {
         return next()
     }
 
-    return res.status(402).json({ erro: 'Não autorizado. Token inválido'})
+    return res.status(401).json({ erro: 'Não autorizado. Token inválido'})
 }
 
 app.get ("/", async (req, res) => {
