@@ -34,7 +34,7 @@ app.post ("/recebemensagem", token ,async (req, res, next) => {
 
     try {
 
-        await axios.get (`${process.env.URL_WHATS_API}/enviar`, {
+        await axios.get(`${process.env.URL_WHATS_API}/enviar`, {
             params: {
                 numero,
                 mensagem: resposta
@@ -45,7 +45,7 @@ app.post ("/recebemensagem", token ,async (req, res, next) => {
         })
         console.log (` Mensagem de resposta enviada para ${numero}`)
     }catch (erro) {
-        console.log ('Erro ao enviar mensagem de resposta: ', erro.mensagem)
+        console.log ('Erro ao enviar mensagem de resposta: ', erro.mensage)
     }
 
     return res.status(200).json({
