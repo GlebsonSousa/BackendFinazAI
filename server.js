@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();  // Carrega variáveis de ambiente do .env
 
+const axios = require('axios');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -28,7 +30,23 @@ app.get ("/", async (req, res) => {
 app.post ("/recebemensagem", token ,async (req, res, next) => {
     const { numero, mensagem, dataMsgRecebida } = req.body;
 
-    const resposta = 'Sua mensagem foi recebida'
+    const resposta = `Recebemos sua mensagem ${mensagem}`
+
+    try {
+
+        await axios.get (`${process.env.URL_WHATS_API}/enviar`, {
+            params: {
+                numero,
+                mensagem: resposta
+            },
+            headers: {
+                Authorization: `Bearer ${process.env.API_TOKEN}`
+            }
+        })
+        console.log (` Mensagem de resposta enviada para ${numero}`)
+    }catch (erro) {
+        console.log ('Erro ao enviar mensagem de resposta: ', erro.mensagem)
+    }
 
     return res.status(200).json({
         numero,
