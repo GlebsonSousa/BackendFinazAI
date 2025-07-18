@@ -1,8 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();  // Carrega variáveis de ambiente do .env
-
-const axios = require('axios');
+require("dotenv").config(); // Carrega variáveis de ambiente do .env
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,53 +8,30 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Rota para verificar se a API está funcionando
+app.get("/", async (req, res) => {
+    return res.status(200).json('API Backend rodando!');
+});
 
-function token (req, res, next) {
-    const authToken = req.headers.authorization || ''
-
-    // Verifica se o token é igual aao definido no .env
-    if (authToken === `Bearer ${process.env.API_TOKEN}`) {
-        return next()
-    }
-
-    return res.status(401).json({ erro: 'Não autorizado. Token inválido'})
-}
-
-app.get ("/", async (req, res) => {
-    return res.status(200).json('Api rodando!')
-})
-
-
-app.post ("/recebemensagem", token ,async (req, res, next) => {
+// Rota que recebe as mensagens do WhatsApp
+app.post("/recebemensagem", async (req, res) => {
     const { numero, mensagem, dataMsgRecebida } = req.body;
 
-    const resposta = `Recebemos sua mensagem ${mensagem}`
+    console.log("📩 Mensagem recebida:");
+    console.log("Número:", numero);
+    console.log("Mensagem:", mensagem);
+    console.log("Data:", dataMsgRecebida);
 
-    try {
-
-        await axios.get(`${process.env.URL_WHATS_API}/enviar`, {
-            params: {
-                numero,
-                mensagem: resposta
-            },
-            headers: {
-                Authorization: `Bearer ${process.env.API_TOKEN}`
-            }
-        })
-        console.log (` Mensagem de resposta enviada para ${numero}`)
-    }catch (erro) {
-        console.log ('Erro ao enviar mensagem de resposta: ', erro.message)
-    }
-
+    // Aqui você pode salvar a mensagem, processar, enviar para outro sistema, etc.
     return res.status(200).json({
+        sucesso: true,
+        mensagem: "Mensagem recebida com sucesso",
         numero,
-        mensagem,
+        mensagemOriginal: mensagem,
         dataMsgRecebida,
-        resposta,
-    })
-})
-
+    });
+});
 
 app.listen(PORT, () => {
-  console.log(`🚀 API da FinanzAI rodando em http://localhost:${PORT}`);
+    console.log(`🚀 API Backend rodando em http://localhost:${PORT}`);
 });
