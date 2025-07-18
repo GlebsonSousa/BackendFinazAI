@@ -45,7 +45,7 @@ app.post ("/recebemensagem", token ,async (req, res, next) => {
         })
         console.log (` Mensagem de resposta enviada para ${numero}`)
     }catch (erro) {
-        console.log ('Erro ao enviar mensagem de resposta: ', erro.mesage)
+        console.log ('Erro ao enviar mensagem de resposta: ', erro.message)
     }
 
     return res.status(200).json({
