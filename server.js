@@ -10,6 +10,8 @@ const axios = require('axios');
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Rota para verificar se a API está funcionando
 app.get("/", async (req, res) => {
