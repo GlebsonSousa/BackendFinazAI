@@ -27,7 +27,7 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
         const data = qs.stringify({ numero, mensagem });
 
         await axios.post(url, data, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: { 'Content-Type': 'application/json' }
         })
 
         console.log("✅ Mensagem enviada com sucesso");
