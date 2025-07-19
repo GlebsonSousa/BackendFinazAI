@@ -16,14 +16,22 @@ app.get("/", async (req, res) => {
 });
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
+    const url = `${process.env.URL_WHATS_API}/enviar`;
     try {
-        const response = await axios.post(`${process.env.URL_WHATS_API}/enviar`, {
+        console.log("🔗 Tentando enviar para:", url);
+        console.log("📦 Payload:", { numero, mensagem });
+
+        const response = await axios.post(url, {
             numero,
             mensagem
-        })
-        console.log(`Enviado ao backend: ${numero}, ${mensagem}`)
-    }catch (erro) {
-        console.error('Erro ao enviar MSG para ApiWhats', erro.message)
+        });
+
+        console.log("✅ Mensagem enviada com sucesso");
+    } catch (erro) {
+        console.error("❌ Erro ao enviar mensagem para API Whats:");
+        console.error("Status:", erro.response?.status);
+        console.error("Data:", erro.response?.data);
+        console.error("Mensagem:", erro.message);
     }
 }
 
@@ -46,6 +54,9 @@ app.post("/recebemensagem", async (req, res) => {
     console.log("Número:", numero);
     console.log("Mensagem:", mensagem);
     console.log("Data:", dataMsgRecebida);
+
+
+    
 
     await enviarRespostaMsgWhats(numero, mensagem)
 
