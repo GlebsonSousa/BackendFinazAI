@@ -28,11 +28,6 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         })
 
-        const response = await axios.post(url, {
-            numero,
-            mensagem
-        });
-
         console.log("✅ Mensagem enviada com sucesso");
     } catch (erro) {
         console.error("❌ Erro ao enviar mensagem para API Whats:");
