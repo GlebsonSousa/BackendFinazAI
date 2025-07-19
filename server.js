@@ -5,6 +5,7 @@ require("dotenv").config(); // Carrega variáveis de ambiente do .env
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const qs = require('qs'); // transforma JSON em string url-encoded
 const axios = require('axios');
 
 app.use(cors());
@@ -20,6 +21,12 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
     try {
         console.log("🔗 Tentando enviar para:", url);
         console.log("📦 Payload:", { numero, mensagem });
+
+        const data = qs.stringify({ numero, mensagem });
+
+        await axios.post(url, data, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
 
         const response = await axios.post(url, {
             numero,
