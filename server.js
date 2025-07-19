@@ -13,6 +13,19 @@ app.get("/", async (req, res) => {
     return res.status(200).json('API Backend rodando!');
 });
 
+async function enviarRespostaMsgWhats(numero, mensagem) {
+    try {
+        const response = await axios.post(`${process.env.URL_WHATS_API}/enviar`, {
+            numero,
+            mensagem
+        })
+        console.log(`Enviado ao backend: ${numero}, ${mensagem}`)
+    }catch (erro) {
+        console.error('Erro ao enviar MSG para ApiWhats', erro.message)
+    }
+}
+
+
 // Rota que recebe as mensagens do WhatsApp
 app.post("/recebemensagem", async (req, res) => {
     
@@ -24,13 +37,15 @@ app.post("/recebemensagem", async (req, res) => {
             erro: "Requisição inálida: corpo ausente ou incoerente."
         })
     }
- 
+
     const { numero, mensagem, dataMsgRecebida } = req.body;
     
     console.log("📩 Mensagem recebida:");
     console.log("Número:", numero);
     console.log("Mensagem:", mensagem);
     console.log("Data:", dataMsgRecebida);
+
+    await enviarRespostaMsgWhats(numero, mensagem)
 
     // Aqui você pode salvar a mensagem, processar, enviar para outro sistema, etc.
     return res.status(200).json({
@@ -39,8 +54,9 @@ app.post("/recebemensagem", async (req, res) => {
         numero,
         mensagemOriginal: mensagem,
         dataMsgRecebida,
-    });
-});
+    })
+
+})
 
 app.listen(PORT, () => {
     console.log(`🚀 API Backend rodando em http://localhost:${PORT}`);
