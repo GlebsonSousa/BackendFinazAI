@@ -15,8 +15,18 @@ app.get("/", async (req, res) => {
 
 // Rota que recebe as mensagens do WhatsApp
 app.post("/recebemensagem", async (req, res) => {
-    const { numero, mensagem, dataMsgRecebida } = req.body;
+    
+    const body = req.body
 
+    if(!body || !body.numero || !body.mensagem || !body.dataMsgRecebida) {
+        return res.status(400).json({
+            sucesso: false,
+            erro: "Requisição inálida: corpo ausente ou incoerente."
+        })
+    }
+ 
+    const { numero, mensagem, dataMsgRecebida } = req.body;
+    
     console.log("📩 Mensagem recebida:");
     console.log("Número:", numero);
     console.log("Mensagem:", mensagem);
