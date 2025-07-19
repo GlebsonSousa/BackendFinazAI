@@ -5,6 +5,8 @@ require("dotenv").config(); // Carrega variáveis de ambiente do .env
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const axios = require('axios');
+
 app.use(cors());
 app.use(express.json());
 
