@@ -24,11 +24,9 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
         console.log("🔗 Tentando enviar para:", url);
         console.log("📦 Payload:", { numero, mensagem });
 
-        const data = qs.stringify({ numero, mensagem });
-
-        await axios.post(url, data, {
-        headers: { 'Content-Type': 'application/json' }
-        })
+        await axios.post(url, { numero, mensagem }, {
+            headers: { 'Content-Type': 'application/json' }
+        });
 
         console.log("✅ Mensagem enviada com sucesso");
     } catch (erro) {
@@ -38,7 +36,6 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
         console.error("Mensagem:", erro.message);
     }
 }
-
 
 // Rota que recebe as mensagens do WhatsApp
 app.post("/recebemensagem", async (req, res) => {
