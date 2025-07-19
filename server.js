@@ -17,7 +17,7 @@ app.get("/", async (req, res) => {
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
     try {
-        const response = await axios.get(`${process.env.URL_WHATS_API}/enviar`, {
+        const response = await axios.post(`${process.env.URL_WHATS_API}/enviar`, {
             numero,
             mensagem
         })
