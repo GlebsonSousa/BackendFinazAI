@@ -38,40 +38,43 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
 }
 
 // Rota que recebe as mensagens do WhatsApp
-app.post("/recebemensagem", async (req, res) => {
-    
-    const body = req.body
+async function processarFilaMensagens() {
+  while (true) {
+    if (filaMensagens.length > 0) {
+      const dados = filaMensagens.shift(); // Remove o primeiro item
+      console.log(`⚙️ Processando mensagem de ${dados.numero}`);
 
-    if(!body || !body.numero || !body.mensagem || !body.dataMsgRecebida) {
-        return res.status(400).json({
-            sucesso: false,
-            erro: "Requisição inálida: corpo ausente ou incoerente."
-        })
+      try {
+        // Aqui você vai enviar para a IA:
+        const respostaIA = await axios.post(`${process.env.URL_IA}/interpretar`, {
+          numero: dados.numero,
+          mensagem: dados.mensagem,
+          data: dados.dataMsgRecebida
+        });
+
+        const comandos = respostaIA.data.comandos;
+        const respostaUsuario = respostaIA.data.resposta;
+
+        console.log("🤖 Comandos recebidos da IA:", comandos);
+        console.log("📤 Resposta para o usuário:", respostaUsuario);
+
+        // Enviar a resposta para o WhatsApp
+        await enviarRespostaMsgWhats(dados.numero, respostaUsuario);
+
+        // Executar comandos recebidos (implementaremos isso depois)
+
+      } catch (erro) {
+        console.error("❌ Erro ao processar mensagem da fila:", erro.message);
+      }
     }
 
-    const { numero, mensagem, dataMsgRecebida } = req.body;
-    
-    console.log("📩 Mensagem recebida:");
-    console.log("Número:", numero);
-    console.log("Mensagem:", mensagem);
-    console.log("Data:", dataMsgRecebida);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Espera 500ms antes de checar de novo
+  }
+}
 
-
-    
-
-    await enviarRespostaMsgWhats(numero, mensagem)
-
-    // Aqui você pode salvar a mensagem, processar, enviar para outro sistema, etc.
-    return res.status(200).json({
-        sucesso: true,
-        mensagem: "Mensagem recebida com sucesso",
-        numero,
-        mensagemOriginal: mensagem,
-        dataMsgRecebida,
-    })
-
-})
 
 app.listen(PORT, () => {
     console.log(`🚀 API Backend rodando em http://localhost:${PORT}`);
+    processarFilaMensagens(); // Inicia o loop da fila
+
 });
