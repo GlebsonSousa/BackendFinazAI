@@ -4,8 +4,7 @@ async function enviarMensagem() {
   try {
     const resposta = await axios.post('http://localhost:3000/recebe-mensagem', {
       usuarioId: '11951300788',
-      mensagem: 'Chocolate 40, limao 1kg 15,89, macarrao'
-    });
+      mensagem: 'quanto gastei com chocolate'});
 
     console.log('✅ Resposta:', resposta.data);
   } catch (error) {

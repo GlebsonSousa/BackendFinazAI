@@ -4,7 +4,9 @@ const path = require('path');
 require("dotenv").config(); // Carrega variáveis do .env
 
 // Lê o prompt inicial da IA
-const prompt = fs.readFileSync(path.join(__dirname, "./finanzai-prompt.txt"), "utf-8")
+const promptPrincipal = fs.readFileSync(path.join(__dirname, "./finanzai-prompt.txt"), "utf-8")
+const dataAtual = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const prompt = promptPrincipal.replace('{{dataAtual}}', dataAtual)
 
 // Instancia do OpenAI
 const openai = new OpenAI({

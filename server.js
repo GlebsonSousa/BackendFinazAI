@@ -35,17 +35,65 @@ app.post('/recebe-mensagem', async(req, res) => {
     const usuarioId = req.body.usuarioId
     const mensagem = req.body.mensagem
     try { 
-      console.log('menssagem: ', mensagem)
-      const respostaDaIa = await enviaParaIa(mensagem)
-      console.log('Tipo da resposta: ', typeof respostaDaIa, '| Comandos: ', respostaDaIa.comandos , '| Mensagem ao usuario: ', respostaDaIa.mensagem)
-      if (respostaDaIa.comandos && respostaDaIa.comandos.length > 0) {
-        AcessaBD(usuarioId, { comandos: respostaDaIa.comandos })
-      }
-
+      await processaMensagemRecebida(usuarioId, mensagem, destinatario='ia')
+      
     } catch (error) {
       console.log ('Erro ao receber mensagem: ', error.message)
     }
 })
+
+async function processaMensagemRecebida(usuarioId, mensagem, destinatario = "ia") {
+  try {
+    console.log("📥 Mensagem recebida:", mensagem);
+    console.log("👤 Usuário ID:", usuarioId);
+    console.log("🎯 Destinatário inicial:", destinatario);
+
+    if (destinatario === "ia") {
+      const respostaDaIa = await enviaParaIa(mensagem);
+      console.log("🤖 Resposta da IA (1ª etapa):", JSON.stringify(respostaDaIa, null, 2));
+
+      const comandos = respostaDaIa.comandos || [];
+      console.log("🧠 Comandos retornados:", JSON.stringify(comandos, null, 2));
+
+      const precisaConsultarBanco = respostaDaIa.memoria === true;
+      console.log(precisaConsultarBanco)
+      if (precisaConsultarBanco) {
+        console.log('Buscando dados')
+        const dados = await AcessaBD(usuarioId, { comandos });
+        console.log("📦 Dados do banco:", JSON.stringify(dados, null, 2));
+
+        const novaMensagem = {
+          original: mensagem,
+          comandos,
+          dados
+        };
+
+        const novaRespostaIa = await enviaParaIa(JSON.stringify(novaMensagem));
+        console.log("🔁 Resposta da IA após dados:", JSON.stringify(novaRespostaIa, null, 2));
+
+        if (novaRespostaIa?.mensagem) {
+          await enviarRespostaMsgWhats(usuarioId, novaRespostaIa.mensagem);
+        } else {
+          console.log("⚠️ IA não retornou nova mensagem após receber os dados.");
+        }
+
+        return;
+      }
+
+      // Caso não precise consultar o banco
+      if (respostaDaIa?.mensagem) {
+        await enviarRespostaMsgWhats(usuarioId, respostaDaIa.mensagem);
+      } else {
+        console.log("⚠️ IA não retornou mensagem direta.");
+      }
+    } else {
+      console.log("⚠️ Destinatário não é IA. Nenhuma ação tomada.");
+    }
+  } catch (err) {
+    console.error("❌ Erro em processaMensagemRecebida:", err.message);
+    console.error(err.stack);
+  }
+}
 
 async function enviaParaIa(mensagem) {
   const msgUsuario = `${mensagem}`
@@ -54,15 +102,21 @@ async function enviaParaIa(mensagem) {
 }
 
 async function AcessaBD(usuarioId, jsonIa) {
-  await processarComandos(usuarioId, jsonIa)
+  respostaDB = processarComandos(usuarioId, jsonIa)
+  return respostaDB
 }
 
-async function enviarRespostaMsgWhats(numero, mensagem) {
-  const url = `${process.env.URL_WHATS_API}/enviar`;
+async function enviarRespostaMsgWhats (numero, mensagem) {
+  console.log(`⚠️ [Mock] Mensagem para ${numero} ignorada (API WhatsApp não está ativa): ${mensagem}`);
+  return;
+}
+
+async function enviarRespostaMsgWhatsFUNÇÃOCERTA(numero, mensagem) {
+  const url = `${process.env.URL_WHATS_API}/enviar`;  
   try {
     console.log("🔗 Tentando enviar para:", url);
     console.log("📦 Payload:", { numero, mensagem });
-    await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } });
+    axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } }); // Adicione await no cameço dessa linha
     console.log("✅ Mensagem enviada com sucesso");
   } catch (erro) {
     console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
@@ -76,7 +130,7 @@ async function processarFilaMensagens() {
       console.log(`⚙️ Processando mensagem de ${dados.numero}`);
 
       try {
-        const respostaIA = await axios.post(`${process.env.URL_IA}/interpretar`, {
+        const respostaIA = await axios.post(`${process.env.URL_IA}/interpretar`, { 
           numero: dados.numero,
           mensagem: dados.mensagem,
           data: dados.dataMsgRecebida
