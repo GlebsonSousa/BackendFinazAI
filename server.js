@@ -4,26 +4,26 @@ const cors = require("cors");
 const axios = require('axios');
 const { processarComandos } = require('./utils/processa_comandos');
 const { conectarDB } = require('./utils/banco');
-const { processarMensagemIA } = require('./IA/server_ia')
+const { processarMensagemIA } = require('./IA/server_ia');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const filaMensagens = [];
 
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rota para testar banco (não conecta aqui)
 app.post('/testaBanco', async (req, res) => {
   try {
-    const usuarioId = req.body.usuarioId
-    const jsonIa = req.body.ia
-    const resultado = await processarComandos(jsonIa, usuarioId)
-    res.json({ sucesso: true, resultado })
+    const usuarioId = req.body.usuarioId;
+    const jsonIa = req.body.ia;
+    const resultado = await processarComandos(jsonIa, usuarioId);
+    res.json({ sucesso: true, resultado });
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ sucesso: false, erro: err.message })
+    console.error(err);
+    res.status(500).json({ sucesso: false, erro: err.message });
   }
 });
 
@@ -31,15 +31,23 @@ app.get("/", (req, res) => {
   res.status(200).json('API Backend rodando!');
 });
 
-app.post('/recebe-mensagem', async(req, res) => {
+app.post('/recebe-mensagem', async (req, res) => {
   const usuarioId = req.body.usuarioId;
   const mensagem = req.body.mensagem;
-  console.log('-------------------------------------------------------------------')
-  console.log ("USUARIO ID",usuarioId)
-  try { 
+
+  console.log('-------------------------------------------------------------------');
+  console.log("USUARIO ID", usuarioId);
+
+  if (!usuarioId) {
+    return res.status(400).json({ sucesso: false, erro: "usuarioId não pode ser vazio" });
+  }
+  if (!mensagem) {
+    return res.status(400).json({ sucesso: false, erro: "mensagem não pode ser vazia" });
+  }
+
+  try {
     const respostaIa = await processaMensagemRecebida(usuarioId, mensagem, 'ia');
     res.json({ sucesso: true, resposta: respostaIa });
-
   } catch (error) {
     console.error('❌ Erro ao receber mensagem:', error.message);
     res.status(500).json({ sucesso: false, erro: "Erro ao processar mensagem." });
@@ -61,7 +69,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
     let respostaDaIa;
     let dados = null;
     let tentativas = 0;
-    const maxTentativas = 1; // evita loop infinito
+    const maxTentativas = 5; // evita loop infinito
 
     while (tentativas < maxTentativas) {
       respostaDaIa = await enviaParaIa(mensagemAtual);
@@ -81,18 +89,20 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
           dados,
           interacao: tentativas + 1
         });
+
         tentativas++;
-        continue; // volta ao início do loop para nova rodada
+        continue; // nova rodada com dados do banco
       }
 
-      // Caso não precise mais acessar banco, encerra loop
+      // Não precisa mais consultar banco, encerra loop
       break;
     }
 
     const respostaFinal = respostaDaIa?.mensagem || "IA não respondeu corretamente.";
-    
-    
+
+    // Envia a resposta para o WhatsApp
     await enviarRespostaMsgWhats(usuarioId, respostaFinal);
+
     return respostaFinal;
 
   } catch (err) {
@@ -102,27 +112,29 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
 }
 
 async function enviaParaIa(mensagem) {
-  const msgUsuario = `${mensagem}`
-  const resposta = await processarMensagemIA(msgUsuario)
-  return resposta
+  // Envia a mensagem para o módulo IA e retorna a resposta
+  const msgUsuario = `${mensagem}`;
+  const resposta = await processarMensagemIA(msgUsuario);
+  return resposta;
 }
 
 async function AcessaBD(usuarioId, jsonIa) {
-  respostaDB = processarComandos(usuarioId, jsonIa)
-  return respostaDB
+  // Processa comandos no banco e retorna resultado
+  const respostaDB = await processarComandos(jsonIa, usuarioId); // inverti os parâmetros para combinar com o que vc tinha no post testeBanco
+  return respostaDB;
 }
 
-async function enviarRespostaMsgWhatsTeste (numero, mensagem) {
+async function enviarRespostaMsgWhatsTeste(numero, mensagem) {
   console.log(`⚠️ [Mock] Mensagem para ${numero} ignorada (API WhatsApp não está ativa): ${mensagem}`);
   return;
 }
 
-async function enviarRespostaMsgWhats(numero = '5511951300788', mensagem) {
-  const url = `${process.env.URL_WHATS_API}/enviar`;  
+async function enviarRespostaMsgWhats(numero, mensagem) {
+  const url = `${process.env.URL_WHATS_API}/enviar`;
   try {
     console.log("🔗 Tentando enviar para:", url);
     console.log("📦 Payload:", { numero, mensagem });
-    await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } }); // Adicione await no cameço dessa linha
+    await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } });
     console.log("✅ Mensagem enviada com sucesso");
   } catch (erro) {
     console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
@@ -136,17 +148,18 @@ async function processarFilaMensagens() {
       console.log(`⚙️ Processando mensagem de ${dados.numero}`);
 
       try {
-        const respostaIA = await axios.post(`${process.env.URL_IA}/interpretar`, { 
+        const respostaIA = await axios.post(`${process.env.URL_IA}/interpretar`, {
           numero: dados.numero,
           mensagem: dados.mensagem,
           data: dados.dataMsgRecebida
         });
+
         const comandos = respostaIA.data.comandos;
         const respostaUsuario = respostaIA.data.resposta;
 
         console.log("🤖 Comandos recebidos da IA:", comandos);
         console.log("📤 Resposta para o usuário:", respostaUsuario);
- 
+
         await enviarRespostaMsgWhats(dados.numero, respostaUsuario);
 
       } catch (erro) {
@@ -171,4 +184,4 @@ async function startServer() {
   }
 }
 
-startServer(); // chama o startServer para iniciar tudo
+startServer();
