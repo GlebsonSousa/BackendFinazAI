@@ -34,7 +34,8 @@ app.get("/", (req, res) => {
 app.post('/recebe-mensagem', async(req, res) => {
   const usuarioId = req.body.usuarioId;
   const mensagem = req.body.mensagem;
-
+  console.log('-------------------------------------------------------------------')
+  console.log ("USUARIO ID",usuarioId)
   try { 
     const respostaIa = await processaMensagemRecebida(usuarioId, mensagem, 'ia');
     res.json({ sucesso: true, resposta: respostaIa });
@@ -89,8 +90,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
     }
 
     const respostaFinal = respostaDaIa?.mensagem || "IA não respondeu corretamente.";
-    console.log('-------------------------------------------------------------------')
-    console.log ("USUARIO ID",usuarioId)
+    
     
     await enviarRespostaMsgWhats(usuarioId, respostaFinal);
     return respostaFinal;
