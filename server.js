@@ -60,7 +60,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
     let respostaDaIa;
     let dados = null;
     let tentativas = 0;
-    const maxTentativas = 5; // evita loop infinito
+    const maxTentativas = 1; // evita loop infinito
 
     while (tentativas < maxTentativas) {
       respostaDaIa = await enviaParaIa(mensagemAtual);
@@ -89,6 +89,9 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario
     }
 
     const respostaFinal = respostaDaIa?.mensagem || "IA não respondeu corretamente.";
+    console.log('-------------------------------------------------------------------')
+    console.log ("USUARIO ID",usuarioId)
+    
     await enviarRespostaMsgWhats(usuarioId, respostaFinal);
     return respostaFinal;
 
@@ -119,7 +122,7 @@ async function enviarRespostaMsgWhats(numero, mensagem) {
   try {
     console.log("🔗 Tentando enviar para:", url);
     console.log("📦 Payload:", { numero, mensagem });
-    axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } }); // Adicione await no cameço dessa linha
+    await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } }); // Adicione await no cameço dessa linha
     console.log("✅ Mensagem enviada com sucesso");
   } catch (erro) {
     console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
