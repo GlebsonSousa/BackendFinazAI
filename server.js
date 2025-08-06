@@ -117,7 +117,7 @@ async function enviarRespostaMsgWhatsTeste (numero, mensagem) {
   return;
 }
 
-async function enviarRespostaMsgWhats(numero, mensagem) {
+async function enviarRespostaMsgWhats(numero = '5511951300788', mensagem) {
   const url = `${process.env.URL_WHATS_API}/enviar`;  
   try {
     console.log("🔗 Tentando enviar para:", url);
