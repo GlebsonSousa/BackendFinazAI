@@ -46,7 +46,7 @@ app.post('/recebe-mensagem', async (req, res) => {
   }
 
   try {
-    const respostaIa = await processaMensagemRecebida(usuarioId, mensagem, 'ia');
+    const respostaIa = await processaMensagemRecebida(usuarioId, mensagem);
     res.json({ sucesso: true, resposta: respostaIa });
   } catch (error) {
     console.error('❌ Erro ao receber mensagem:', error.message);
@@ -54,79 +54,31 @@ app.post('/recebe-mensagem', async (req, res) => {
   }
 });
 
-async function processaMensagemRecebida(usuarioId, mensagemInicial, destinatario = "ia") {
+async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
-    console.log("📥 Mensagem recebida:", mensagemInicial);
-    console.log("👤 Usuário ID:", usuarioId);
-    console.log("🎯 Destinatário inicial:", destinatario);
+    const respostaIa = await processarMensagemIA(mensagemInicial) 
 
-    if (destinatario !== "ia") {
-      console.log("⚠️ Destinatário não é IA. Nenhuma ação tomada.");
-      return "Destinatário inválido.";
+    console.log(respostaIa)
+
+    if (respostaIa?.comandos.length > 0) {
+      const respostaDB = await AcessaBD(usuarioId, respostaIa.comandos)
     }
 
-    let mensagemAtual = mensagemInicial;
-    let respostaDaIa;
-    let dados = null;
-    let tentativas = 0;
-    const maxTentativas = 5; // evita loop infinito
-
-    while (tentativas < maxTentativas) {
-      respostaDaIa = await enviaParaIa(mensagemAtual);
-      console.log(`🤖 Resposta da IA (tentativa ${tentativas + 1}):`, JSON.stringify(respostaDaIa, null, 2));
-
-      const precisaConsultarBanco = respostaDaIa?.memoria === true;
-      const comandos = respostaDaIa?.comandos || [];
-
-      if (precisaConsultarBanco) {
-        console.log('🔍 IA solicitou dados do banco.');
-        dados = await AcessaBD(usuarioId, { comandos });
-        console.log("📦 Dados do banco:", JSON.stringify(dados, null, 2));
-
-        mensagemAtual = JSON.stringify({
-          original: mensagemInicial,
-          comandos,
-          dados,
-          interacao: tentativas + 1
-        });
-
-        tentativas++;
-        continue; // nova rodada com dados do banco
-      }
-
-      // Não precisa mais consultar banco, encerra loop
-      break;
+    if (respostaIa?.mensagem) {
+      await enviarRespostaMsgWhats (usuarioId, respostaIa.mensagem)
     }
+    return respostaIa.mensagem   
+  } catch {
 
-    const respostaFinal = respostaDaIa?.mensagem || "IA não respondeu corretamente.";
-
-    // Envia a resposta para o WhatsApp
-    await enviarRespostaMsgWhats(usuarioId, respostaFinal);
-
-    return respostaFinal;
-
-  } catch (err) {
-    console.error("❌ Erro em processaMensagemRecebida:", err.message);
-    return "Erro interno ao processar sua mensagem.";
   }
 }
 
-async function enviaParaIa(mensagem) {
-  // Envia a mensagem para o módulo IA e retorna a resposta
-  const msgUsuario = `${mensagem}`;
-  const resposta = await processarMensagemIA(msgUsuario);
-  return resposta;
-}
+
 
 async function AcessaBD(usuarioId, jsonIa) {
   // Processa comandos no banco e retorna resultado
   const respostaDB = await processarComandos(jsonIa, usuarioId); // inverti os parâmetros para combinar com o que vc tinha no post testeBanco
-  return respostaDB;
-}
-
-async function enviarRespostaMsgWhatsTeste(numero, mensagem) {
-  console.log(`⚠️ [Mock] Mensagem para ${numero} ignorada (API WhatsApp não está ativa): ${mensagem}`);
-  return;
+  return respostaDB
 }
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
