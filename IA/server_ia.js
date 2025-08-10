@@ -34,11 +34,28 @@ async function processarMensagemIA(mensagem) {
     });
 
     const output = response.choices[0].message.content;
-    const json = JSON.parse(output);
 
-    // Limpeza de quebras de linha
-    if (json.mensagem) {
-      json.mensagem = json.mensagem.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+    console.log('Resposta bruta da ia: ', output)
+
+    try {
+      // Tenta parsear a resposta como JSON
+      const json = JSON.parse(output);
+
+      // Limpeza de quebras de linha na mensagem
+      if (json.mensagem) {
+        json.mensagem = json.mensagem.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+      }
+
+      return json;
+
+    } catch (parseError) {
+      // Se falhar o parse, retorna texto puro dentro do formato padrão
+      console.warn("Resposta da IA não é JSON válido. Retornando texto simples.");
+      return {
+        mensagem: output.trim(),
+        comandos: [],
+        destinatario: "cliente"
+      };
     }
 
     return json;
