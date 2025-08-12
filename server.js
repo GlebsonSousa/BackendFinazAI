@@ -75,8 +75,18 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
     // 5. Processa comandos no banco, se existirem
     if (respostaIa?.comandos?.length > 0) {
-      await AcessaBD(usuarioId, respostaIa.comandos);
-    }
+      const dadosDB = await AcessaBD(usuarioId, respostaIa.comandos);
+      
+      const novaMensagemFinalParaIa = mensagemUsuario + "\n\nUsuário: " + mensagemInicial + "\nIA: " + respostaIa + "\nRespostaBancodeDados: " +  dadosDB
+
+      const novaRespostaIa = await processarMensagemIA(novaMensagemFinalParaIa);
+
+      if (novaRespostaIa?.mensagem) {
+        await enviarRespostaMsgWhats(usuarioId, novaRespostaIa.mensagem);
+      
+        return
+      }
+  }
 
     // 6. Envia resposta para o WhatsApp
     if (respostaIa?.mensagem) {
