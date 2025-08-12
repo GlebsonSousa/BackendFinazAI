@@ -61,7 +61,11 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     const mensagemUsuario = await ler_cache(usuarioId);
 
     // 2. Monta o prompt concatenado para IA
-    const mensagemFinalParaIa = mensagemUsuario + "\n\nUsuário: " + mensagemInicial + "\nIA: "
+    const const novaMensagemFinalParaIa =
+  mensagemUsuario +
+  "\n\nUsuário: " + mensagemInicial +
+  "\nIA: " + (respostaIa.mensagem || '') +
+  "\nRespostaBancodeDados: " + JSON.stringify(dadosDB)
 
     console.log('Mensagem Concatenada: ', mensagemFinalParaIa);
 
