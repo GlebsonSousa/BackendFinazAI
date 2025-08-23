@@ -14,12 +14,12 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Rota para testar banco (não conecta aqui)
+// Rota para testar banco
 app.post('/testaBanco', async (req, res) => {
   try {
     const usuarioId = req.body.usuarioId
     const jsonIa = req.body.ia
-    const resultado = await processarComandos(jsonIa, usuarioId)
+    const resultado = await processarComandos(usuarioId, jsonIa) // <-- padronizado
     res.json({ sucesso: true, resultado })
   } catch (err) {
     console.error(err)
@@ -61,22 +61,19 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
     // 2. Monta prompt inicial para IA
     let mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA:`;
-    console.log('Mensagem Concatenada: ', mensagemFinalParaIa);
 
     // 3. Envia para IA processar
     let respostaIa = await processarMensagemIA(mensagemFinalParaIa);
 
     // 4. Se houver comandos, processa no banco
     if (respostaIa?.comandos?.length > 0) {
-      console.log("Comandos para processar no banco:", respostaIa.comandos);
       const dadosDB = await AcessaBD(usuarioId, respostaIa.comandos);
-
       console.log("Dados retornados do banco:", dadosDB);
+
       // Monta nova prompt para a IA incluindo os dados do banco
       mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA: ${respostaIa.mensagem}\nDados do Banco: ${JSON.stringify(dadosDB)}\nIA:`;
 
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
-      console.log("Resposta final da IA após dados do banco:", respostaIa);
     }
 
     // 5. Salva a conversa final no cache
@@ -98,15 +95,13 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
 async function AcessaBD(usuarioId, jsonIa) {
   // Processa comandos no banco e retorna resultado
-  const respostaDB = await processarComandos(jsonIa, usuarioId); // inverti os parâmetros para combinar com o que vc tinha no post testeBanco
+  const respostaDB = await processarComandos(usuarioId, jsonIa) // <-- padronizado
   return respostaDB
 }
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
   const url = `${process.env.URL_WHATS_API}/enviar`
   try {
-    console.log("🔗 Tentando enviar para:", url)
-    console.log("📦 Payload:", { numero, mensagem })
     await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } });
     console.log("✅ Mensagem enviada com sucesso")
   } catch (erro) {
@@ -120,7 +115,6 @@ async function startServer() {
     await conectarDB() // conecta uma vez
     app.listen(PORT, () => {
       console.log(`🚀 API Backend rodando em http://localhost:${PORT}`)
-      //processarFilaMensagens(); // inicia a fila só depois do servidor rodar
     })
   } catch (err) {
     console.error('Erro ao conectar no banco:', err)
