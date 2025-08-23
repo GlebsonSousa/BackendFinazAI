@@ -7,7 +7,7 @@ const registroSchema = new mongoose.Schema({
     valor: Number,
     quantidade: Number,
     categoria: String,
-    data: Date,
+    data: { type: Date, default: Date.now },
     identificador: String // Para corrigir gasto
 })
 

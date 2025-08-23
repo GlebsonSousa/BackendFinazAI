@@ -1,0 +1,47 @@
+{
+  "5511951300788": {
+    "id": "5511951300788",
+    "conversas": [
+      {
+        "usuarioId": "teste",
+        "ia": "Desculpe, mas só consigo ajudar com questões relacionadas a finanças pessoais. Se precisar de ajuda nesse assunto, estou à disposição!"
+      },
+      {
+        "usuarioId": "relatorio",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      },
+      {
+        "usuarioId": "teste",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      },
+      {
+        "usuarioId": "Estou com fome",
+        "ia": "Desculpe, mas estou aqui para te ajudar com questões financeiras pessoais. Se precisar de ajuda nesse assunto, estou à disposição!"
+      },
+      {
+        "usuarioId": "limao por 13,90",
+        "ia": "Limão adicionado com sucesso por R$ 13,90 na categoria de alimentação. Se precisar de mais alguma coisa, estou aqui para ajudar!"
+      },
+      {
+        "usuarioId": "verduras 2,50",
+        "ia": "Limão adicionado com sucesso por R$ 13,90 e verduras por R$ 2,50 na categoria de alimentação. Se precisar de mais alguma coisa, estou aqui para ajudar!"
+      },
+      {
+        "usuarioId": "quanto gastei hoje",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      },
+      {
+        "usuarioId": "relatorio",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      },
+      {
+        "usuarioId": "relatorio",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      },
+      {
+        "usuarioId": "relatorio",
+        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+      }
+    ]
+  }
+}

@@ -3,13 +3,14 @@ const Registro = require('../models/registro');
 
 // Conexão com o MongoDB
 async function conectarDB() {
+  if (mongoose.connection.readyState === 1) return; // já conectado
   try {
-    await mongoose.connect('mongodb+srv://glebsonsalmeida:lBVyvhQSXxjH4EBb@ravicluster.m4hpc2p.mongodb.net/?retryWrites=true&w=majority&appName=RaviCluster', {
+    await mongoose.connect('mongodb+srv://glebsonsalmeida:conecta@ravicluster.keccztf.mongodb.net/raviDB?retryWrites=true&w=majority&appName=RaviCluster', {
       serverSelectionTimeoutMS: 5000
     });
-    console.log('Conectado ao DB !!');
+    console.log('✅ Conectado ao DB!');
   } catch (err) {
-    console.error('Erro ao conectar ao DB: ', err.message);
+    console.error('❌ Erro ao conectar ao DB: ', err.message);
   }
 }
 
@@ -21,8 +22,7 @@ async function adicionarGasto(comando, usuarioId) {
     item: comando.item,
     valor: comando.valor,
     quantidade: comando.quantidade || 1,
-    categoria: comando.categoria,
-    data: new Date()
+    categoria: comando.categoria
   });
   return await novo.save();
 }
@@ -35,22 +35,21 @@ async function adicionarReceita(comando, usuarioId) {
     item: comando.item,
     valor: comando.valor,
     quantidade: comando.quantidade || 1,
-    categoria: comando.categoria,
-    data: new Date()
+    categoria: comando.categoria
   });
   return await novo.save();
 }
 
-// Remover gasto ou receita por ID
-async function removerRegistro(comando, usuarioId) {
+// Remover registro
+async function removerGasto(comando, usuarioId) {
   return await Registro.deleteOne({
     _id: comando.id,
-    usuarioId: usuarioId
+    usuarioId
   });
 }
 
-// Corrigir gasto ou receita
-async function corrigirRegistro(comando, usuarioId) {
+// Corrigir registro
+async function corrigirGasto(comando, usuarioId) {
   return await Registro.updateOne(
     { _id: comando.id, usuarioId },
     {
@@ -74,7 +73,7 @@ async function gerarRelatorio(tipo, comando, usuarioId) {
       dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
       break;
     case 'semanal':
-      const diaSemana = agora.getDay(); // 0 = domingo
+      const diaSemana = agora.getDay();
       dataInicio = new Date(agora);
       dataInicio.setDate(agora.getDate() - diaSemana);
       break;
@@ -88,19 +87,17 @@ async function gerarRelatorio(tipo, comando, usuarioId) {
       throw new Error('Tipo de relatório inválido.');
   }
 
-  const registros = await Registro.find({
+  return await Registro.find({
     usuarioId,
     data: { $gte: dataInicio }
   }).sort({ data: -1 });
-
-  return registros;
 }
 
 module.exports = {
   conectarDB,
   adicionarGasto,
   adicionarReceita,
-  removerRegistro,
-  corrigirRegistro,
+  removerGasto,
+  corrigirGasto,
   gerarRelatorio
 };
