@@ -9,7 +9,6 @@ const { ler_cache, guarda_dados } = require ('./Cache/cache')
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const filaMensagens = []
 
 app.use(cors())
 app.use(express.json())
@@ -61,11 +60,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     const mensagemUsuario = await ler_cache(usuarioId);
 
     // 2. Monta o prompt concatenado para IA
-    const const novaMensagemFinalParaIa =
-  mensagemUsuario +
-  "\n\nUsuário: " + mensagemInicial +
-  "\nIA: " + (respostaIa.mensagem || '') +
-  "\nRespostaBancodeDados: " + JSON.stringify(dadosDB)
+    const mensagemFinalParaIa = mensagemUsuario + "\n\nUsuário: " + mensagemInicial + "\nIA: "
 
     console.log('Mensagem Concatenada: ', mensagemFinalParaIa);
 
@@ -75,6 +70,11 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     // 4. Salva a conversa no cache: usuário + resposta textual da IA
     if (respostaIa) {
       await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
+    }
+
+    // 6. Envia resposta para o WhatsApp
+    if (respostaIa?.mensagem) {
+      await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
     }
 
     // 5. Processa comandos no banco, se existirem
@@ -87,15 +87,9 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
       if (novaRespostaIa?.mensagem) {
         await enviarRespostaMsgWhats(usuarioId, novaRespostaIa.mensagem);
-      
-        return
       }
   }
 
-    // 6. Envia resposta para o WhatsApp
-    if (respostaIa?.mensagem) {
-      await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
-    }
 
     // 7. Retorna mensagem da IA para endpoint
     return respostaIa.mensagem;
