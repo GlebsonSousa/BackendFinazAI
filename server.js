@@ -56,42 +56,38 @@ app.post('/recebe-mensagem', async (req, res) => {
 
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
-    // 1. Lê histórico formatado (string)
+    // 1. Lê histórico do usuário
     const mensagemUsuario = await ler_cache(usuarioId);
 
-    // 2. Monta o prompt concatenado para IA
-    const mensagemFinalParaIa = mensagemUsuario + "\n\nUsuário: " + mensagemInicial + "\nIA: "
-
+    // 2. Monta prompt inicial para IA
+    let mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA:`;
     console.log('Mensagem Concatenada: ', mensagemFinalParaIa);
 
     // 3. Envia para IA processar
-    const respostaIa = await processarMensagemIA(mensagemFinalParaIa);
+    let respostaIa = await processarMensagemIA(mensagemFinalParaIa);
 
-    // 4. Salva a conversa no cache: usuário + resposta textual da IA
-    if (respostaIa) {
-      await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
+    // 4. Se houver comandos, processa no banco
+    if (respostaIa?.comandos?.length > 0) {
+      console.log("Comandos para processar no banco:", respostaIa.comandos);
+      const dadosDB = await AcessaBD(usuarioId, respostaIa.comandos);
+
+      console.log("Dados retornados do banco:", dadosDB);
+      // Monta nova prompt para a IA incluindo os dados do banco
+      mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA: ${respostaIa.mensagem}\nDados do Banco: ${JSON.stringify(dadosDB)}\nIA:`;
+
+      respostaIa = await processarMensagemIA(mensagemFinalParaIa);
+      console.log("Resposta final da IA após dados do banco:", respostaIa);
     }
 
-    // 6. Envia resposta para o WhatsApp
+    // 5. Salva a conversa final no cache
     if (respostaIa?.mensagem) {
+      await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
+
+      // 6. Envia apenas a resposta final para WhatsApp
       await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
     }
 
-    // 5. Processa comandos no banco, se existirem
-    if (respostaIa?.comandos?.length > 0) {
-      const dadosDB = await AcessaBD(usuarioId, respostaIa.comandos);
-      
-      const novaMensagemFinalParaIa = mensagemUsuario + "\n\nUsuário: " + mensagemInicial + "\nIA: " + respostaIa + "\nRespostaBancodeDados: " +  dadosDB
-
-      const novaRespostaIa = await processarMensagemIA(novaMensagemFinalParaIa);
-
-      if (novaRespostaIa?.mensagem) {
-        await enviarRespostaMsgWhats(usuarioId, novaRespostaIa.mensagem);
-      }
-  }
-
-
-    // 7. Retorna mensagem da IA para endpoint
+    // 7. Retorna mensagem final
     return respostaIa.mensagem;
 
   } catch (error) {
