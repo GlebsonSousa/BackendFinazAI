@@ -57,10 +57,17 @@ app.post('/recebe-mensagem', async (req, res) => {
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
     // 1. Lê histórico do usuário
-    const mensagemUsuario = await ler_cache(usuarioId);
+    const historico = await ler_cache(usuarioId);
 
     // 2. Monta prompt inicial para IA
-    let mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA:`;
+    let mensagemFinalParaIa = `
+      Histórico do usuário: ${historico}
+
+      Mensagem atual do usuario: ${mensagemInicial}
+
+      IA:
+    `;
+
 
     // 3. Envia para IA processar
     let respostaIa = await processarMensagemIA(mensagemFinalParaIa);
@@ -71,7 +78,17 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
       console.log("Dados retornados do banco:", dadosDB);
 
       // Monta nova prompt para a IA incluindo os dados do banco
-      mensagemFinalParaIa = `${mensagemUsuario}\n\nUsuário: ${mensagemInicial}\nIA: ${respostaIa.mensagem}\nDados do Banco: ${JSON.stringify(dadosDB)}\nIA:`;
+      mensagemFinalParaIa = `
+        Histórico do usuário: ${historico}
+
+        Mensagem atual: ${mensagemInicial}
+
+        Resposta anterior da IA: ${respostaIa.mensagem}
+
+        Dados do Banco: ${JSON.stringify(dadosDB)}
+
+        IA:
+      `;
 
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
     }

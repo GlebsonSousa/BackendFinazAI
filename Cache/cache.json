@@ -3,44 +3,36 @@
     "id": "5511951300788",
     "conversas": [
       {
-        "usuarioId": "teste",
-        "ia": "Desculpe, mas só consigo ajudar com questões relacionadas a finanças pessoais. Se precisar de ajuda nesse assunto, estou à disposição!"
+        "usuarioId": "cafe 15",
+        "ia": "Anotado! ☕️ Você gastou 15 em café. Registrado na categoria alimentação. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira!"
       },
       {
         "usuarioId": "relatorio",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+        "ia": "Anotado! ☕️ Você gastou 15 em café. Registrado na categoria alimentação. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira! Vou gerar o relatório financeiro do mês atual para você. Assim, poderá visualizar todos os seus gastos e receitas de agosto até agora. Aguarde um momento!"
       },
       {
-        "usuarioId": "teste",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+        "usuarioId": "cafe 1",
+        "ia": "Mais um cafezinho anotado! ☕️ Agora você gastou 16 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais informações ou ajuda, é só me chamar!"
       },
       {
-        "usuarioId": "Estou com fome",
-        "ia": "Desculpe, mas estou aqui para te ajudar com questões financeiras pessoais. Se precisar de ajuda nesse assunto, estou à disposição!"
+        "usuarioId": "limao 6 por 15",
+        "ia": "Adicionado! 🍋 Mais 6 limões por 15, totalizando 90 em limões. Seus gastos estão sendo registrados na categoria alimentação. Continue acompanhando suas despesas para manter suas finanças em ordem!"
       },
       {
-        "usuarioId": "limao por 13,90",
-        "ia": "Limão adicionado com sucesso por R$ 13,90 na categoria de alimentação. Se precisar de mais alguma coisa, estou aqui para ajudar!"
+        "usuarioId": "no, eu comprei 6 limoes por 15 no total",
+        "ia": "Entendi! Mais 6 limões por 15, totalizando 90 em limões. Seus gastos estão sendo registrados certinho na categoria alimentação. Continue acompanhando suas despesas para manter suas finanças em ordem! 🍋"
       },
       {
-        "usuarioId": "verduras 2,50",
-        "ia": "Limão adicionado com sucesso por R$ 13,90 e verduras por R$ 2,50 na categoria de alimentação. Se precisar de mais alguma coisa, estou aqui para ajudar!"
+        "usuarioId": "caafe 10",
+        "ia": "Novo gasto registrado! ☕️ Dessa vez foram 10 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!"
       },
       {
-        "usuarioId": "quanto gastei hoje",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+        "usuarioId": "cafe 10",
+        "ia": "{\n  \"destinatario\": \"backend\",\n  \"comandos\": [\n    {\n      \"comando\": \"adicionar_gasto\",\n      \"item\": \"Café\",\n      \"valor\": 10,\n      \"quantidade\": 1,\n      \"categoria\": \"alimentação\"\n    }\n  ],\n  \"mensagem\": {\n      \"Item\": \"Café\",\n      \"Valor\": 10,\n      \"Categoria\": \"alimentação\",\n      \"Quantidade de itens\": 1,\n      \"Mensagem\": \"Novo gasto registrado! ☕️ Dessa vez foram 10 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!\"\n  },\n  \"memoria\": true\n}"
       },
       {
-        "usuarioId": "relatorio",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
-      },
-      {
-        "usuarioId": "relatorio",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
-      },
-      {
-        "usuarioId": "relatorio",
-        "ia": "Estou buscando o relatório de todos os gastos de hoje para você. Por favor, aguarde um momento."
+        "usuarioId": "cafe 15",
+        "ia": "{\n  \"destinatario\": \"backend\",\n  \"comandos\": [],\n  \"mensagem\": {\n      \"Item\": \"Café\",\n      \"Valor\": 15,\n      \"Categoria\": \"alimentação\",\n      \"Quantidade de itens\": 1,\n      \"Mensagem\": \"Entendi! Parece que você gastou 15 em café novamente. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!\"\n  }\n}"
       }
     ]
   }
