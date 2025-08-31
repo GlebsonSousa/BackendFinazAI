@@ -1,41 +1,41 @@
-require("dotenv").config()
-const express = require("express")
-const cors = require("cors")
-const axios = require('axios')
-const { processarComandos } = require('./utils/processa_comandos')
-const { conectarDB } = require('./utils/banco')
-const { processarMensagemIA } = require('./IA/server_ia')
-const { ler_cache, guarda_dados } = require ('./Cache/cache')
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
+const { processarComandos } = require("./utils/processa_comandos");
+const { conectarDB } = require("./utils/banco");
+const { processarMensagemIA } = require("./IA/server_ia");
+const { ler_cache, guarda_dados } = require("./Cache/cache");
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rota para testar banco
-app.post('/testaBanco', async (req, res) => {
+app.post("/testaBanco", async (req, res) => {
   try {
-    const usuarioId = req.body.usuarioId
-    const jsonIa = req.body.ia
-    const resultado = await processarComandos(usuarioId, jsonIa) // <-- padronizado
-    res.json({ sucesso: true, resultado })
+    const usuarioId = req.body.usuarioId;
+    const jsonIa = req.body.ia;
+    const resultado = await processarComandos(usuarioId, jsonIa);
+    res.json({ sucesso: true, resultado });
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ sucesso: false, erro: err.message })
+    console.error(err);
+    res.status(500).json({ sucesso: false, erro: err.message });
   }
 });
 
 app.get("/", (req, res) => {
-  res.status(200).json('API Backend rodando!');
+  res.status(200).json("API Backend rodando!");
 });
 
-app.post('/recebe-mensagem', async (req, res) => {
+app.post("/recebe-mensagem", async (req, res) => {
   const usuarioId = req.body.usuarioId;
   const mensagem = req.body.mensagem;
 
-  console.log('-------------------------------------------------------------------');
+  console.log("-------------------------------------------------------------------");
   console.log("USUARIO ID", usuarioId);
 
   if (!usuarioId) {
@@ -49,94 +49,107 @@ app.post('/recebe-mensagem', async (req, res) => {
     const respostaIa = await processaMensagemRecebida(usuarioId, mensagem);
     res.json({ sucesso: true, resposta: respostaIa });
   } catch (error) {
-    console.error('❌ Erro ao receber mensagem:', error.message);
+    console.error("❌ Erro ao receber mensagem:", error.message);
     res.status(500).json({ sucesso: false, erro: "Erro ao processar mensagem." });
   }
 });
 
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
-    // 1. Lê histórico do usuário
-    const historico = await ler_cache(usuarioId);
+    // 1. Lê histórico do usuário já formatado
+    let historico = await ler_cache(usuarioId);
+    let processarNovamente = true;
+    let respostaIa = null;
+    let dadosBanco = null;
 
-    // 2. Monta prompt inicial para IA
-    let mensagemFinalParaIa = `
-      Histórico do usuário: ${historico}
+    // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
+    while (processarNovamente) {
+      // 3. Monta prompt para IA
+      let mensagemFinalParaIa = `
+Histórico do usuário:
+${JSON.stringify(historico, null, 2)}
 
-      Mensagem atual do usuario: ${mensagemInicial}
+Mensagem atual do usuário: ${mensagemInicial}
 
-      IA:
-    `;
+${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
 
-
-    // 3. Envia para IA processar
-    let respostaIa = await processarMensagemIA(mensagemFinalParaIa);
-
-    // 4. Se houver comandos, processa no banco
-    if (respostaIa?.comandos?.length > 0) {
-      const dadosDB = await AcessaBD(usuarioId, respostaIa.comandos);
-      console.log("Dados retornados do banco:", dadosDB);
-
-      // Monta nova prompt para a IA incluindo os dados do banco
-      mensagemFinalParaIa = `
-        Histórico do usuário: ${historico}
-
-        Mensagem atual: ${mensagemInicial}
-
-        Resposta anterior da IA: ${respostaIa.mensagem}
-
-        Dados do Banco: ${JSON.stringify(dadosDB)}
-
-        IA:
+IA:
       `;
 
+      // 4. Envia para IA processar
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
+
+      if (!respostaIa) {
+        throw new Error("IA não retornou resposta válida.");
+      }
+
+      // 5. Se IA retornar processar_novamente = true, buscamos dados no banco
+      if (respostaIa.processar_novamente) {
+        if (respostaIa.comandos && respostaIa.comandos.length > 0) {
+          dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
+          console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
+        }
+        // Continua o loop, enviando os dados do banco novamente para a IA
+        processarNovamente = true;
+      } else {
+        // IA confirmou que está pronta para executar
+        processarNovamente = false;
+      }
     }
 
-    // 5. Salva a conversa final no cache
+    // 6. Quando a IA confirma (processar_novamente = false), executa comandos
+    let resultadoExecucao = [];
+    if (respostaIa.comandos && respostaIa.comandos.length > 0) {
+      resultadoExecucao = await processarComandos(usuarioId, respostaIa.comandos);
+    }
+
+    // 7. Salva a conversa final no cache
     if (respostaIa?.mensagem) {
       await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
-
-      // 6. Envia apenas a resposta final para WhatsApp
       await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
     }
 
-    // 7. Retorna mensagem final
+    // 8. Retorna a mensagem final da IA
     return respostaIa.mensagem;
 
   } catch (error) {
-    console.error('Erro ao processar mensagem recebida:', error);
+    console.error("Erro ao processar mensagem recebida:", error);
     throw error;
   }
 }
 
+
+
 async function AcessaBD(usuarioId, jsonIa) {
-  // Processa comandos no banco e retorna resultado
-  const respostaDB = await processarComandos(usuarioId, jsonIa) // <-- padronizado
-  return respostaDB
+  try {
+    const resultado = await processarComandos(usuarioId, jsonIa);
+    return resultado;
+  } catch (error) {
+    console.error("Erro ao acessar o banco de dados:", error);
+  }
 }
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
-  const url = `${process.env.URL_WHATS_API}/enviar`
+  const url = `${process.env.URL_WHATS_API}/enviar`;
   try {
-    await axios.post(url, { numero, mensagem }, { headers: { 'Content-Type': 'application/json' } });
-    console.log("✅ Mensagem enviada com sucesso")
+    await axios.post(url, { numero, mensagem }, { headers: { "Content-Type": "application/json" } });
+    console.log("✅ Mensagem enviada com sucesso");
   } catch (erro) {
-    console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message)
+    console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
   }
 }
 
 // Função que conecta no banco e inicia o servidor
 async function startServer() {
   try {
-    await conectarDB() // conecta uma vez
+    await conectarDB();
     app.listen(PORT, () => {
-      console.log(`🚀 API Backend rodando em http://localhost:${PORT}`)
-    })
+      console.log(`🚀 API Backend rodando em http://localhost:${PORT}`);
+    });
   } catch (err) {
-    console.error('Erro ao conectar no banco:', err)
-    process.exit(1)
+    console.error("Erro ao conectar no banco:", err);
+    process.exit(1);
   }
 }
 
-startServer()
+startServer();

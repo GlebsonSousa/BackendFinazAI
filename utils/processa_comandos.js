@@ -5,57 +5,71 @@ async function processarComandos(usuarioId, json) {
 
   console.log("📥 Processando comandos:", JSON.stringify(json, null, 2));
 
-  if (json.comandos) {
-    const comandos = Array.isArray(json.comandos) ? json.comandos : [json.comandos];
+  const comandos = Array.isArray(json.comandos)
+    ? json.comandos
+    : Array.isArray(json)
+      ? json
+      : [json].filter(Boolean);
 
-    for (const comando of comandos) {
-      const tipo = comando.comando;
+  console.log("Comandos após verificação---------------:", comandos);
 
-      try {
-        if (tipo === 'adicionar_gasto') {
-          const r = await banco.adicionarGasto(comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+  for (const comando of comandos) {
+    const tipo = comando.comando;
+    console.log('➡️ Processando comando:', tipo);
 
-        } else if (tipo === 'adicionar_receita') {
-          const r = await banco.adicionarReceita(comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+    try {
+      switch (tipo) {
+        case 'adicionar_gasto':
+          const gasto = await banco.adicionarGasto(usuarioId, comando);
+          respostas.push({ comando: tipo, sucesso: true, detalhes: gasto });
+          break;
 
-        } else if (tipo === 'remover_gasto') {
-          const r = await banco.removerGasto(comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'adicionar_receita':
+          const receita = await banco.adicionarReceita(usuarioId, comando);
+          respostas.push({ comando: tipo, sucesso: true, detalhes: receita });
+          break;
 
-        } else if (tipo === 'corrigir_gasto') {
-          const r = await banco.corrigirGasto(comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'remover_gasto':
+          const removeGasto = await banco.removerGasto(usuarioId, comando);
+          respostas.push({ comando: tipo, sucesso: true, detalhes: removeGasto });
+          break;
 
-        } else if (tipo === 'pedido_relatorio_diario') {
-          const r = await banco.gerarRelatorio('diario', comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'corrigir_gasto':
+          if (comando.id && comando.valor != null) {
+            const corrigido = await banco.corrigirGasto(usuarioId, comando);
+            respostas.push({ comando: tipo, sucesso: true, detalhes: corrigido });
+          } else {
+            respostas.push({ comando: tipo, sucesso: false, erro: 'Faltam dados para correção' });
+          }
+          break;
 
-        } else if (tipo === 'pedido_relatorio_semanal') {
-          const r = await banco.gerarRelatorio('semanal', comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'pedido_relatorio_diario':
+          const diario = await banco.gerarRelatorio(usuarioId, 'diario', comando.referencia_data);
+          respostas.push({ comando: tipo, sucesso: true, dados: diario });
+          break;
 
-        } else if (tipo === 'pedido_relatorio_mensal') {
-          const r = await banco.gerarRelatorio('mensal', comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'pedido_relatorio_semanal':
+          const semanal = await banco.gerarRelatorio(usuarioId, 'semanal', comando.referencia_data);
+          respostas.push({ comando: tipo, sucesso: true, dados: semanal });
+          break;
 
-        } else if (tipo === 'pedido_relatorio_anual') {
-          const r = await banco.gerarRelatorio('anual', comando, usuarioId);
-          respostas.push({ sucesso: true, dado: r });
+        case 'pedido_relatorio_mensal':
+          const mensal = await banco.gerarRelatorio(usuarioId, 'mensal', comando.referencia_data);
+          respostas.push({ comando: tipo, sucesso: true, dados: mensal });
+          break;
 
-        } else if (tipo === 'ajuda') {
-          respostas.push({ sucesso: true, dado: 'Ajuda solicitada. Você pode me pedir para registrar gastos, receitas, gerar relatórios, corrigir lançamentos ou pedir ajuda!' });
+        case 'pedido_relatorio_anual':
+          const anual = await banco.gerarRelatorio(usuarioId, 'anual', comando.referencia_data);
+          respostas.push({ comando: tipo, sucesso: true, dados: anual });
+          break;
 
-        } else if (tipo === 'erro_entrada') {
-          respostas.push({ sucesso: false, erro: 'A mensagem não pôde ser compreendida. Pode reformular ou pedir ajuda!' });
-
-        } else {
-          respostas.push({ sucesso: false, erro: `Comando desconhecido: ${tipo}` });
-        }
-      } catch (err) {
-        respostas.push({ sucesso: false, erro: err.message });
+        default:
+          respostas.push({ comando: tipo, sucesso: false, erro: 'Comando desconhecido' });
       }
+
+    } catch (error) {
+      console.error('❌ Erro ao processar comando:', error);
+      respostas.push({ comando: tipo, sucesso: false, erro: error.message });
     }
   }
 

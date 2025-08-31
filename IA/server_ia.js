@@ -26,7 +26,7 @@ async function processarMensagemIA(mensagem) {
   try {
     const response = await openai.chat.completions.create({
       model: process.env.MODEL,
-      temperature: 0.3,
+      temperature: 0.6,
       messages: [
         { role: "system", content: prompt },
         { role: "user", content: mensagem },
@@ -35,7 +35,7 @@ async function processarMensagemIA(mensagem) {
 
     const output = response.choices[0].message.content;
 
-    console.log('Resposta bruta da ia: ', output)
+    //console.log('Resposta bruta da ia: ', output)
 
     try {
       // Tenta parsear a resposta como JSON
@@ -49,16 +49,9 @@ async function processarMensagemIA(mensagem) {
       return json;
 
     } catch (parseError) {
-      // Se falhar o parse, retorna texto puro dentro do formato padrão
-      console.warn("Resposta da IA não é JSON válido. Retornando texto simples.");
-      return {
-        mensagem: output.trim(),
-        comandos: [],
-        destinatario: "cliente"
-      };
+      console.error("Erro ao parsear JSON da IA:", parseError.message);
+      throw new Error("Resposta da IA não está em formato JSON válido.");
     }
-
-    return json;
   } catch (err) {
     console.error("Erro ao processar mensagem da IA:", err.message);
     throw err;

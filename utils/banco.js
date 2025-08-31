@@ -5,9 +5,10 @@ const Registro = require('../models/registro');
 async function conectarDB() {
   if (mongoose.connection.readyState === 1) return; // já conectado
   try {
-    await mongoose.connect('mongodb+srv://glebsonsalmeida:conecta@ravicluster.keccztf.mongodb.net/raviDB?retryWrites=true&w=majority&appName=RaviCluster', {
-      serverSelectionTimeoutMS: 5000
-    });
+    await mongoose.connect(
+      'mongodb+srv://glebsonsalmeida:conecta@ravicluster.keccztf.mongodb.net/raviDB?retryWrites=true&w=majority&appName=RaviCluster',
+      { serverSelectionTimeoutMS: 5000 }
+    );
     console.log('✅ Conectado ao DB!');
   } catch (err) {
     console.error('❌ Erro ao conectar ao DB: ', err.message);
@@ -15,82 +16,98 @@ async function conectarDB() {
 }
 
 // Adicionar gasto
-async function adicionarGasto(comando, usuarioId) {
+async function adicionarGasto(usuarioId, comando) {
   const novo = new Registro({
     usuarioId,
-    tipo: 'gasto',
+    tipo: 'Despesa',
     item: comando.item,
     valor: comando.valor,
     quantidade: comando.quantidade || 1,
-    categoria: comando.categoria
+    categoria: comando.categoria,
+    data: comando.referencia_data ? new Date(comando.referencia_data) : new Date()
   });
   return await novo.save();
 }
 
 // Adicionar receita
-async function adicionarReceita(comando, usuarioId) {
-  const novo = new Registro({
+async function adicionarReceita(usuarioId, comando) {
+  const nova = new Registro({
     usuarioId,
-    tipo: 'receita',
+    tipo: 'Receita',
     item: comando.item,
     valor: comando.valor,
     quantidade: comando.quantidade || 1,
-    categoria: comando.categoria
+    categoria: comando.categoria,
+    data: comando.referencia_data ? new Date(comando.referencia_data) : new Date()
   });
-  return await novo.save();
+  return await nova.save();
 }
 
-// Remover registro
-async function removerGasto(comando, usuarioId) {
-  return await Registro.deleteOne({
-    _id: comando.id,
-    usuarioId
-  });
+// Remover gasto
+async function removerGasto(usuarioId, comando) {
+  const filtro = { usuarioId, item: comando.item, tipo: 'Despesa' };
+  const resultado = await Registro.deleteMany(filtro);
+  return resultado;
 }
 
-// Corrigir registro
-async function corrigirGasto(comando, usuarioId) {
-  return await Registro.updateOne(
-    { _id: comando.id, usuarioId },
-    {
-      $set: {
-        item: comando.item,
-        valor: comando.valor,
-        quantidade: comando.quantidade,
-        categoria: comando.categoria
-      }
-    }
-  );
+// Corrigir gasto (necessário enviar "id")
+async function corrigirGasto(usuarioId, comando) {
+  if (!comando.id) {
+    return { sucesso: false, erro: 'ID do registro é necessário para corrigir' };
+  }
+  const filtro = { usuarioId, _id: comando.id };
+  const atualizacao = { valor: comando.valor };
+  const resultado = await Registro.updateOne(filtro, atualizacao);
+  return { sucesso: true, detalhes: resultado };
 }
 
-// Gerar relatório
-async function gerarRelatorio(tipo, comando, usuarioId) {
-  const agora = new Date();
-  let dataInicio;
+// Gerar relatórios
+async function gerarRelatorio(usuarioId, tipo, referencia_data) {
+  const query = { usuarioId };
+  const dataRef = referencia_data ? new Date(referencia_data) : new Date();
 
   switch (tipo) {
     case 'diario':
-      dataInicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+      const inicioDia = new Date(dataRef);
+      inicioDia.setHours(0, 0, 0, 0);
+      const fimDia = new Date(inicioDia);
+      fimDia.setDate(fimDia.getDate() + 1);
+      query.data = { $gte: inicioDia, $lt: fimDia };
       break;
+
     case 'semanal':
-      const diaSemana = agora.getDay();
-      dataInicio = new Date(agora);
-      dataInicio.setDate(agora.getDate() - diaSemana);
+      const inicioSemana = new Date(dataRef);
+      inicioSemana.setDate(dataRef.getDate() - dataRef.getDay());
+      inicioSemana.setHours(0, 0, 0, 0);
+      const fimSemana = new Date(inicioSemana);
+      fimSemana.setDate(fimSemana.getDate() + 7);
+      query.data = { $gte: inicioSemana, $lt: fimSemana };
       break;
+
     case 'mensal':
-      dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
+      const inicioMes = new Date(dataRef.getFullYear(), dataRef.getMonth(), 1);
+      const fimMes = new Date(dataRef.getFullYear(), dataRef.getMonth() + 1, 1);
+      query.data = { $gte: inicioMes, $lt: fimMes };
       break;
+
     case 'anual':
-      dataInicio = new Date(agora.getFullYear(), 0, 1);
+      const inicioAno = new Date(dataRef.getFullYear(), 0, 1);
+      const fimAno = new Date(dataRef.getFullYear() + 1, 0, 1);
+      query.data = { $gte: inicioAno, $lt: fimAno };
       break;
-    default:
-      throw new Error('Tipo de relatório inválido.');
   }
 
-  return await Registro.find({
-    usuarioId,
-    data: { $gte: dataInicio }
-  }).sort({ data: -1 });
+  const registros = await Registro.find(query);
+
+  // Retornar apenas campos que a IA pode usar
+  return registros.map(d => ({
+    id: d._id,
+    item: d.item,
+    valor: d.valor,
+    quantidade: d.quantidade,
+    categoria: d.categoria,
+    data: d.data
+  }));
 }
 
 module.exports = {

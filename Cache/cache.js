@@ -18,7 +18,7 @@ async function guarda_dados(usuarioId, mensagemUsuario, RespostaIA) {
             const data = await fs.readFile(filePath, 'utf-8')
             historico = data ? JSON.parse(data) : {}
         } catch (err) {
-            if (err.code !== 'ENOENT') throw err
+            historico = {}
         }
 
         if (!historico[usuarioId]) {

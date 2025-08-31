@@ -3,36 +3,44 @@
     "id": "5511951300788",
     "conversas": [
       {
-        "usuarioId": "cafe 15",
-        "ia": "Anotado! ☕️ Você gastou 15 em café. Registrado na categoria alimentação. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira!"
+        "usuarioId": "pode",
+        "ia": "Todos os registros foram removidos! Agora está tudo limpinho por aqui. Se precisar registrar novos gastos ou receitas, é só me chamar! 🗑️✨"
       },
       {
-        "usuarioId": "relatorio",
-        "ia": "Anotado! ☕️ Você gastou 15 em café. Registrado na categoria alimentação. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira! Vou gerar o relatório financeiro do mês atual para você. Assim, poderá visualizar todos os seus gastos e receitas de agosto até agora. Aguarde um momento!"
+        "usuarioId": "compre cafe por 15 ontem, leite por 35 hoje e nescau por 19 anteontem",
+        "ia": "Registrei suas compras: café por R$15 ontem, leite por R$35 hoje e Nescau por R$19 anteontem. Se precisar de mais alguma coisa, é só avisar! ☕🥛🍫"
       },
       {
-        "usuarioId": "cafe 1",
-        "ia": "Mais um cafezinho anotado! ☕️ Agora você gastou 16 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais informações ou ajuda, é só me chamar!"
+        "usuarioId": "me da um relatorio da semana",
+        "ia": "Aqui está o relatório dos seus gastos desta semana: - **Café:** R$15 (29/08/2025) - **Leite:** R$35 (30/08/2025) - **Nescau:** R$19 (28/08/2025) Se precisar de mais alguma coisa ou quiser fazer ajustes, é só avisar! 📊😊"
       },
       {
-        "usuarioId": "limao 6 por 15",
-        "ia": "Adicionado! 🍋 Mais 6 limões por 15, totalizando 90 em limões. Seus gastos estão sendo registrados na categoria alimentação. Continue acompanhando suas despesas para manter suas finanças em ordem!"
+        "usuarioId": "pague 13 no nescau",
+        "ia": "Beleza, ajustei o valor do Nescau para R$13. Tudo certo agora! 🍫✅"
       },
       {
-        "usuarioId": "no, eu comprei 6 limoes por 15 no total",
-        "ia": "Entendi! Mais 6 limões por 15, totalizando 90 em limões. Seus gastos estão sendo registrados certinho na categoria alimentação. Continue acompanhando suas despesas para manter suas finanças em ordem! 🍋"
+        "usuarioId": "ola",
+        "ia": "Olá! 😊 Como posso te ajudar hoje com suas finanças? Se precisar de um relatório, adicionar um gasto ou receita, é só me avisar! 💰✨"
       },
       {
-        "usuarioId": "caafe 10",
-        "ia": "Novo gasto registrado! ☕️ Dessa vez foram 10 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!"
+        "usuarioId": "me da um relatorio",
+        "ia": "Aqui está o seu relatório de hoje! Você teve uma compra de **leite** por R$35. Se precisar de mais alguma coisa ou quiser fazer ajustes, é só avisar! 📊😊"
       },
       {
-        "usuarioId": "cafe 10",
-        "ia": "{\n  \"destinatario\": \"backend\",\n  \"comandos\": [\n    {\n      \"comando\": \"adicionar_gasto\",\n      \"item\": \"Café\",\n      \"valor\": 10,\n      \"quantidade\": 1,\n      \"categoria\": \"alimentação\"\n    }\n  ],\n  \"mensagem\": {\n      \"Item\": \"Café\",\n      \"Valor\": 10,\n      \"Categoria\": \"alimentação\",\n      \"Quantidade de itens\": 1,\n      \"Mensagem\": \"Novo gasto registrado! ☕️ Dessa vez foram 10 em café. Mantenha o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!\"\n  },\n  \"memoria\": true\n}"
+        "usuarioId": "agora da semana",
+        "ia": "Aqui está o relatório dos seus gastos desta semana: - **Café:** R$15 (29/08/2025) - **Leite:** R$35 (30/08/2025) - **Nescau:** R$19 (28/08/2025) Se precisar de mais alguma coisa ou quiser fazer ajustes, é só avisar! 📊😊"
       },
       {
-        "usuarioId": "cafe 15",
-        "ia": "{\n  \"destinatario\": \"backend\",\n  \"comandos\": [],\n  \"mensagem\": {\n      \"Item\": \"Café\",\n      \"Valor\": 15,\n      \"Categoria\": \"alimentação\",\n      \"Quantidade de itens\": 1,\n      \"Mensagem\": \"Entendi! Parece que você gastou 15 em café novamente. Lembre-se de manter o controle dos seus gastos para uma melhor organização financeira. Se precisar de mais alguma coisa, estou por aqui para ajudar!\"\n  }\n}"
+        "usuarioId": "me da um relatorio da semana",
+        "ia": "Aqui está o relatório dos seus gastos desta semana: - **Café:** R$15 (29/08/2025) - **Leite:** R$35 (30/08/2025) - **Nescau:** R$19 (28/08/2025) Se precisar de mais alguma coisa ou quiser fazer ajustes, é só avisar! 📊😊"
+      },
+      {
+        "usuarioId": "relatorio da semna",
+        "ia": "Parece que você quis dizer 'relatório da semana'. Aqui está: - **Café:** R$15 (29/08/2025) - **Leite:** R$35 (30/08/2025) - **Nescau:** R$19 (28/08/2025) Se precisar de mais alguma coisa ou quiser fazer ajustes, é só avisar! 📊😊"
+      },
+      {
+        "usuarioId": "relatorio do mes",
+        "ia": "📅 Relatório do mês de agosto de 2025 💰 Gastos: R$ 0,00 ➕ Receitas: R$ 0,00 📉 Saldo do mês: R$ 0,00 🔍 Você ainda não registrou nenhum gasto ou receita este mês! Vamos começar a anotar suas despesas? Se precisar de ajuda, é só avisar! 😊💸"
       }
     ]
   }
