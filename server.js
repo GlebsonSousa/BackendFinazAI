@@ -119,8 +119,6 @@ IA:
   }
 }
 
-
-
 async function AcessaBD(usuarioId, jsonIa) {
   try {
     const resultado = await processarComandos(usuarioId, jsonIa);

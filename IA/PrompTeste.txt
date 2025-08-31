@@ -14,6 +14,9 @@ Seu papel é interpretar mensagens informais como:
 - "quanto gastei hoje?"
 - "recebi meu salário 2000"
 - "corrige o arroz de 10 para 12"
+---
+
+Importante: O usuario precisa enviar o nome do item e o valor. Somente estes campos sao obrigatorios. Voce deve interpretar qual a categoria e etc.
 
 ---
 
@@ -173,4 +176,3 @@ EXEMPLOS DE USO
 - Controla o loop IA ↔ Banco com "processar_novamente": true/false.
 - Gera relatórios humanos e bonitos usando apenas "mensagem".
 - Não envia campos extras que quebram o backend.
-
