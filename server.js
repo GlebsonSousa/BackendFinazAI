@@ -37,7 +37,8 @@ app.post("/recebe-mensagem", async (req, res) => {
 
   console.log("-------------------------------------------------------------------");
   console.log("USUARIO ID", usuarioId);
-
+  console.log("MENSAGEM", mensagem);
+  console.log("-------------------------------------------------------------------");
   if (!usuarioId) {
     return res.status(400).json({ sucesso: false, erro: "usuarioId não pode ser vazio" });
   }
