@@ -77,17 +77,18 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
       // Se já temos dados do banco, significa que estamos na segunda volta do loop para formatar um relatório.
       // Neste caso, montamos o prompt SEM o histórico para forçar a IA a usar apenas os dados.
+      // NOVO CÓDIGO
       if (dadosBanco) {
-
-        await salvar_contexto_temporario(usuarioId, dadosBanco);
-
-        console.log("Montando prompt SEM histórico para formatação de relatório.");
+        // A lógica agora preserva o objetivo original da IA
+        console.log("Montando prompt SEM histórico, mas com contexto da ação.");
         mensagemFinalParaIa = `
-            Mensagem original do usuário: ${mensagemInicial}
+            A mensagem original do usuário era: "${mensagemInicial}"
+
+            Você solicitou os dados abaixo para continuar uma tarefa de múltiplos passos (como corrigir ou remover um gasto).
 
             Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
 
-            IA, sua única tarefa agora é formatar os "Dados do Banco" acima em um relatório claro e amigável para o usuário. Ignore completamente qualquer conversa anterior.
+            IA, continue a tarefa que você começou. Analise os 'Dados do Banco' e siga as regras do 'FLUXO OBRIGATÓRIO PARA CORREÇÃO E REMOÇÃO' do seu prompt principal para pedir a confirmação do usuário antes de executar a ação final. NÃO gere um relatório genérico.
             IA:
         `;
       } else {
