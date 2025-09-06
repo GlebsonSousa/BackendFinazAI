@@ -1,3 +1,5 @@
+// Arquivo: utils/processa_comandos.js (CORRIGIDO)
+
 const banco = require('./banco');
 
 async function processarComandos(usuarioId, json) {
@@ -16,6 +18,12 @@ async function processarComandos(usuarioId, json) {
   for (const comando of comandos) {
     const tipo = comando.comando;
     console.log('➡️ Processando comando:', tipo);
+
+    // Lógica para substituir a data ANTES de usar
+    let dataParaRelatorio = comando.referencia_data;
+    if (dataParaRelatorio === '{{dataAtual}}') {
+      dataParaRelatorio = new Date(); // Substitui o placeholder pela data atual real
+    }
 
     try {
       switch (tipo) {
@@ -43,25 +51,27 @@ async function processarComandos(usuarioId, json) {
           }
           break;
 
+        // --- SEÇÃO CORRIGIDA ---
         case 'pedido_relatorio_diario':
-          const diario = await banco.gerarRelatorio(usuarioId, 'diario', comando.referencia_data);
+          const diario = await banco.gerarRelatorio(usuarioId, 'diario', dataParaRelatorio);
           respostas.push({ comando: tipo, sucesso: true, dados: diario });
           break;
 
         case 'pedido_relatorio_semanal':
-          const semanal = await banco.gerarRelatorio(usuarioId, 'semanal', comando.referencia_data);
+          const semanal = await banco.gerarRelatorio(usuarioId, 'semanal', dataParaRelatorio);
           respostas.push({ comando: tipo, sucesso: true, dados: semanal });
           break;
 
         case 'pedido_relatorio_mensal':
-          const mensal = await banco.gerarRelatorio(usuarioId, 'mensal', comando.referencia_data);
+          const mensal = await banco.gerarRelatorio(usuarioId, 'mensal', dataParaRelatorio);
           respostas.push({ comando: tipo, sucesso: true, dados: mensal });
           break;
 
         case 'pedido_relatorio_anual':
-          const anual = await banco.gerarRelatorio(usuarioId, 'anual', comando.referencia_data);
+          const anual = await banco.gerarRelatorio(usuarioId, 'anual', dataParaRelatorio);
           respostas.push({ comando: tipo, sucesso: true, dados: anual });
           break;
+        // --- FIM DA SEÇÃO CORRIGIDA ---
 
         default:
           respostas.push({ comando: tipo, sucesso: false, erro: 'Comando desconhecido' });
