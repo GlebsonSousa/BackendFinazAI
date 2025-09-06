@@ -55,6 +55,8 @@ app.post("/recebe-mensagem", async (req, res) => {
   }
 });
 
+// Substitua a função existente pela esta no seu arquivo principal (ex: index.js)
+
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
     // 1. Lê histórico do usuário já formatado
@@ -65,8 +67,25 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
     // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
     while (processarNovamente) {
-      // 3. Monta prompt para IA
-      let mensagemFinalParaIa = `
+      // --- LÓGICA MODIFICADA PARA MONTAR O PROMPT ---
+      let mensagemFinalParaIa;
+
+      // Se já temos dados do banco, significa que estamos na segunda volta do loop para formatar um relatório.
+      // Neste caso, montamos o prompt SEM o histórico para forçar a IA a usar apenas os dados.
+      if (dadosBanco) {
+        console.log("Montando prompt SEM histórico para formatação de relatório.");
+        mensagemFinalParaIa = `
+Mensagem original do usuário: ${mensagemInicial}
+
+Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
+
+IA, sua única tarefa agora é formatar os "Dados do Banco" acima em um relatório claro e amigável para o usuário. Ignore completamente qualquer conversa anterior.
+IA:
+        `;
+      } else {
+        // Se não temos dados do banco, é a primeira chamada. Enviamos o histórico normalmente.
+        console.log("Montando prompt COM histórico para interpretação inicial.");
+        mensagemFinalParaIa = `
 Histórico do usuário:
 ${JSON.stringify(historico, null, 2)}
 
@@ -75,7 +94,9 @@ Mensagem atual do usuário: ${mensagemInicial}
 ${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
 
 IA:
-      `;
+        `;
+      }
+      // --- FIM DA LÓGICA MODIFICADA ---
 
       // 4. Envia para IA processar
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
