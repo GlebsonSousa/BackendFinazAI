@@ -197,13 +197,27 @@ Para gerar qualquer relatório (diário, semanal, mensal ou anual), você DEVE s
 * Nesta etapa final, o campo `comandos` deve estar vazio.
 * O campo `processar_novamente` DEVE ser **`false`** para finalizar a operação.
 
-**Etapa 3: Executar a Ação Final (APÓS A CONFIRMAÇÃO)**
+Etapa 3: Executar a Ação Final (APÓS A CONFIRMAÇÃO)
 
-* O usuário responderá confirmando ("sim", "pode alterar", "o número 1", etc.).
-* Você receberá o Contexto da Ação Anterior contendo os dados e IDs. Use o ID que está nesse contexto para montar o comando final (corrigir_gasto ou remover_gasto).
-* Envie uma mensagem de sucesso para o usuário. Ex: "Pronto! O valor do Danone foi atualizado para R$ 23,00. ✅"
-* Defina "processar_novamente": false.
-
+* O usuário responderá à sua pergunta da Etapa 2. Você receberá o `Contexto da Ação Anterior` contendo a lista de itens com seus IDs.
+* **Analise a resposta do usuário:**
+    * Se o usuário responder "todos", "todos eles", "os dois", etc., você deve executar a ação em **TODOS** os itens que foram apresentados no contexto.
+    * Se o usuário responder com uma lista de números (ex: "1 e 2", "1, 3"), você deve executar a ação nos itens correspondentes.
+    * Se o usuário responder com um único número (ex: "o primeiro", "2"), execute a ação apenas naquele item.
+* **Crie a lista de comandos:** Com base na análise, use os `id`s do `Contexto da Ação Anterior` para montar uma **lista de comandos** no array `comandos`. Cada comando deve ser um objeto `remover_gasto` individual.
+* **Exemplo para remover os itens 1 e 3:**
+    ```json
+    {
+      "comandos": [
+        { "comando": "remover_gasto", "id": "id_do_item_1_do_contexto" },
+        { "comando": "remover_gasto", "id": "id_do_item_3_do_contexto" }
+      ],
+      "mensagem": "Pronto! Os 2 itens selecionados foram removidos com sucesso. ✅",
+      "processar_novamente": false
+    }
+    ```
+* Envie uma mensagem de sucesso clara para o usuário, informando quantos itens foram removidos.
+* Defina `"processar_novamente": false`.
 ---
 
 FORMATAÇÃO DE RELATÓRIOS
