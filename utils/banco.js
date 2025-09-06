@@ -67,36 +67,38 @@ async function gerarRelatorio(usuarioId, tipo, referencia_data) {
   const dataRef = referencia_data ? new Date(referencia_data) : new Date();
 
   switch (tipo) {
-    case 'diario':
-      const inicioDia = new Date(dataRef);
-      inicioDia.setHours(0, 0, 0, 0);
+     case 'diario':
+      // Constrói a data de referência em UTC para evitar problemas de fuso horário
+      const dataRefUTCdia = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), dataRef.getUTCDate()));
+      const inicioDia = dataRefUTCdia;
       const fimDia = new Date(inicioDia);
-      fimDia.setDate(fimDia.getDate() + 1);
+      fimDia.setUTCDate(fimDia.getUTCDate() + 1);
       query.data = { $gte: inicioDia, $lt: fimDia };
       break;
 
     case 'semanal':
-      const inicioSemana = new Date(dataRef);
-      inicioSemana.setDate(dataRef.getDate() - dataRef.getDay());
-      inicioSemana.setHours(0, 0, 0, 0);
+      const dataRefUTCsemana = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), dataRef.getUTCDate()));
+      const diaDaSemana = dataRefUTCsemana.getUTCDay();
+      const inicioSemana = new Date(dataRefUTCsemana);
+      inicioSemana.setUTCDate(inicioSemana.getUTCDate() - diaDaSemana);
       const fimSemana = new Date(inicioSemana);
-      fimSemana.setDate(fimSemana.getDate() + 7);
+      fimSemana.setUTCDate(fimSemana.getUTCDate() + 7);
       query.data = { $gte: inicioSemana, $lt: fimSemana };
       break;
 
     case 'mensal':
-      const inicioMes = new Date(dataRef.getFullYear(), dataRef.getMonth(), 1);
-      const fimMes = new Date(dataRef.getFullYear(), dataRef.getMonth() + 1, 1);
+      // Usa métodos UTC para garantir que o fuso horário não interfira
+      const inicioMes = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), 1));
+      const fimMes = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth() + 1, 1));
       query.data = { $gte: inicioMes, $lt: fimMes };
       break;
 
     case 'anual':
-      const inicioAno = new Date(dataRef.getFullYear(), 0, 1);
-      const fimAno = new Date(dataRef.getFullYear() + 1, 0, 1);
+      const inicioAno = new Date(Date.UTC(dataRef.getUTCFullYear(), 0, 1));
+      const fimAno = new Date(Date.UTC(dataRef.getUTCFullYear() + 1, 0, 1));
       query.data = { $gte: inicioAno, $lt: fimAno };
       break;
   }
-
   const registros = await Registro.find(query);
 
   // Retornar apenas campos que a IA pode usar

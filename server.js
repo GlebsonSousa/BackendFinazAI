@@ -65,7 +65,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     let respostaIa = null;
     let dadosBanco = null;
 
-    let contador = 0
+    let contador = 1
 
     // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
     while (processarNovamente) {
@@ -100,37 +100,48 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
           IA:
         `;
       }
+      console.log("-------------------------------------------------------------------");
+      console.log("Prompt enviado para IA:", mensagemFinalParaIa);
+      console.log("-------------------------------------------------------------------");
       // --- FIM DA LÓGICA MODIFICADA ---
 
       // 4. Envia para IA processar
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
-
+      console.log("-------------------------------------------------------------------");
+      console.log("Resposta da IA:", respostaIa);
+      console.log("-------------------------------------------------------------------");
       if (!respostaIa) {
         throw new Error("IA não retornou resposta válida.");
       }
 
 
       // 5. Se IA retornar processar_novamente = true, buscamos dados no banco
-      if (respostaIa.processar_novamente) {
-        if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-          dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
-          console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
-        }
-        // Continua o loop, enviando os dados do banco novamente para a IA
-        processarNovamente = true;
-      } else {
-        // IA confirmou que está pronta para executar
+      // CÓDIGO CORRIGIDO
+if (respostaIa.processar_novamente) {
+    // Se a IA quer re-processar E enviou comandos, buscamos os dados no banco.
+    if (respostaIa.comandos && respostaIa.comandos.length > 0) {
+        dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
+        console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
+        processarNovamente = true; // Continua o loop para a etapa de formatação.
+    } else {
+        // Se a IA quer re-processar mas NÃO enviou comandos,
+        // significa que ela está apenas fazendo uma pergunta ou confirmação.
+        // Devemos parar o loop e enviar a pergunta ao usuário.
         processarNovamente = false;
-      }
+    }
+} else {
+    // IA confirmou que está pronta para executar ou já finalizou.
+    processarNovamente = false;
+}
     }
 
     // 6. Quando a IA confirma (processar_novamente = false), executa comandos
-    let resultadoExecucao = [];
     if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-      resultadoExecucao = await processarComandos(usuarioId, respostaIa.comandos);
+        console.log('✅ Executando comandos finais da IA...');
+        await AcessaBD(usuarioId, respostaIa.comandos);
     }
 
-    // 7. Salva a conversa final no cache
+    // 7. Salva a conversa final no cache e envia a resposta
     if (respostaIa?.mensagem) {
       await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
       await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);

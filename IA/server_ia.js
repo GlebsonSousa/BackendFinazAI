@@ -42,8 +42,8 @@ async function processarMensagemIA(mensagem) {
       const json = JSON.parse(output);
 
       // Limpeza de quebras de linha na mensagem
-      if (json.mensagem) {
-        json.mensagem = json.mensagem.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+      if (json.mensagem && typeof json.mensagem === 'string') {
+        json.mensagem = json.mensagem.trim();
       }
 
       return json;
