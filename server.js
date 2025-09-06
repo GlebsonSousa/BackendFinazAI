@@ -65,35 +65,39 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     let respostaIa = null;
     let dadosBanco = null;
 
+    let contador = 0
+
     // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
     while (processarNovamente) {
       // --- LÓGICA MODIFICADA PARA MONTAR O PROMPT ---
       let mensagemFinalParaIa;
+
+      console.log(`🔄 Iteração IA : ${contador++}`);
 
       // Se já temos dados do banco, significa que estamos na segunda volta do loop para formatar um relatório.
       // Neste caso, montamos o prompt SEM o histórico para forçar a IA a usar apenas os dados.
       if (dadosBanco) {
         console.log("Montando prompt SEM histórico para formatação de relatório.");
         mensagemFinalParaIa = `
-Mensagem original do usuário: ${mensagemInicial}
+            Mensagem original do usuário: ${mensagemInicial}
 
-Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
+            Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
 
-IA, sua única tarefa agora é formatar os "Dados do Banco" acima em um relatório claro e amigável para o usuário. Ignore completamente qualquer conversa anterior.
-IA:
+            IA, sua única tarefa agora é formatar os "Dados do Banco" acima em um relatório claro e amigável para o usuário. Ignore completamente qualquer conversa anterior.
+            IA:
         `;
       } else {
         // Se não temos dados do banco, é a primeira chamada. Enviamos o histórico normalmente.
         console.log("Montando prompt COM histórico para interpretação inicial.");
         mensagemFinalParaIa = `
-Histórico do usuário:
-${JSON.stringify(historico, null, 2)}
+            Histórico do usuário: 
+            ${JSON.stringify(historico, null, 2)}
 
-Mensagem atual do usuário: ${mensagemInicial}
+            Mensagem atual do usuário: ${mensagemInicial}
 
-${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
+            ${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
 
-IA:
+          IA:
         `;
       }
       // --- FIM DA LÓGICA MODIFICADA ---
