@@ -1,3 +1,5 @@
+// Arquivo: index.js (ou o nome do seu arquivo principal)
+
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -14,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rota para testar banco
+// Rota para testar a execução de comandos diretamente (útil para testes)
 app.post("/testaBanco", async (req, res) => {
   try {
     const usuarioId = req.body.usuarioId;
@@ -27,118 +29,159 @@ app.post("/testaBanco", async (req, res) => {
   }
 });
 
+// Rota de "saúde" da API
 app.get("/", (req, res) => {
   res.status(200).json("API Backend rodando!");
 });
 
+// Rota principal que recebe as mensagens do usuário
 app.post("/recebe-mensagem", async (req, res) => {
   const usuarioId = req.body.usuarioId;
   const mensagem = req.body.mensagem;
 
-  console.log("-------------------------------------------------------------------");
-  console.log("USUARIO ID", usuarioId);
-  console.log("MENSAGEM", mensagem);
-  console.log("-------------------------------------------------------------------");
-  if (!usuarioId) {
-    return res.status(400).json({ sucesso: false, erro: "usuarioId não pode ser vazio" });
-  }
-  if (!mensagem) {
-    return res.status(400).json({ sucesso: false, erro: "mensagem não pode ser vazia" });
+  console.log("\n\n--- NOVA MENSAGEM RECEBIDA ---");
+  console.log("USUARIO ID:", usuarioId);
+  console.log("MENSAGEM:", mensagem);
+  console.log("---------------------------------");
+  
+  if (!usuarioId || !mensagem) {
+    return res.status(400).json({ sucesso: false, erro: "usuarioId e mensagem são obrigatórios." });
   }
 
   try {
     const respostaIa = await processaMensagemRecebida(usuarioId, mensagem);
     res.json({ sucesso: true, resposta: respostaIa });
   } catch (error) {
-    console.error("❌ Erro ao receber mensagem:", error.message);
-    res.status(500).json({ sucesso: false, erro: "Erro ao processar mensagem." });
+    console.error("❌ Erro grave na rota /recebe-mensagem:", error.message);
+    res.status(500).json({ sucesso: false, erro: "Erro crítico ao processar mensagem." });
   }
 });
 
+/**
+ * Função central que orquestra a conversa com a IA e o acesso ao banco de dados.
+ * @param {string} usuarioId - O ID do usuário (ex: número de telefone).
+ * @param {string} mensagemInicial - A mensagem enviada pelo usuário.
+ */
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
-    // 1. Lê histórico do usuário já formatado
     let historico = await ler_cache(usuarioId);
     let processarNovamente = true;
     let respostaIa = null;
     let dadosBanco = null;
+    let loopCount = 1;
 
-    // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
+    // Loop que continua até a IA ter todos os dados necessários (processar_novamente = false)
     while (processarNovamente) {
-      // 3. Monta prompt para IA
-      let mensagemFinalParaIa = `
+      console.log(`\n============ INÍCIO DO LOOP ${loopCount} ============`);
+      
+      const promptParaIa = `
 Histórico do usuário:
 ${JSON.stringify(historico, null, 2)}
 
 Mensagem atual do usuário: ${mensagemInicial}
 
-${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
+${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}` : ""}
 
 IA:
       `;
 
-      // 4. Envia para IA processar
-      respostaIa = await processarMensagemIA(mensagemFinalParaIa);
+      // LOG CRÍTICO 1: Mostra exatamente o que a IA está recebendo
+      console.log(`[LOOP ${loopCount}] PROMPT COMPLETO ENVIADO PARA A IA:\n`, promptParaIa);
+
+      respostaIa = await processarMensagemIA(promptParaIa);
+      
+      // LOG CRÍTICO 2: Mostra exatamente o que a IA respondeu
+      console.log(`[LOOP ${loopCount}] RESPOSTA BRUTA DA IA:\n`, JSON.stringify(respostaIa, null, 2));
 
       if (!respostaIa) {
-        throw new Error("IA não retornou resposta válida.");
+        throw new Error("A resposta da IA foi nula ou inválida.");
       }
 
-      // 5. Se IA retornar processar_novamente = true, buscamos dados no banco
+      // Se a IA pedir para processar novamente, significa que ela precisa de dados do banco
       if (respostaIa.processar_novamente) {
         if (respostaIa.comandos && respostaIa.comandos.length > 0) {
+          console.log(`[LOOP ${loopCount}] IA pediu dados. Buscando no banco...`);
           dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
-          console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
+          
+          // LOG CRÍTICO 3: Mostra o que o banco de dados retornou
+          console.log(`[LOOP ${loopCount}] DADOS RETORNADOS DO BANCO:\n`, JSON.stringify(dadosBanco, null, 2));
+        } else {
+          // Se a IA pedir para processar novamente mas não mandar comandos, é um estado de erro.
+          // Quebramos o loop para evitar um ciclo infinito.
+          console.warn(`[LOOP ${loopCount}] AVISO: IA pediu para processar novamente, mas não enviou comandos. Interrompendo loop.`);
+          processarNovamente = false; 
         }
-        // Continua o loop, enviando os dados do banco novamente para a IA
-        processarNovamente = true;
       } else {
-        // IA confirmou que está pronta para executar
+        // Se a IA não pedir para processar novamente, o ciclo está completo
+        console.log(`[LOOP ${loopCount}] IA finalizou o processamento.`);
         processarNovamente = false;
       }
+      
+      console.log(`============ FIM DO LOOP ${loopCount} ============`);
+      loopCount++;
     }
 
-    // 6. Quando a IA confirma (processar_novamente = false), executa comandos
-    let resultadoExecucao = [];
-    if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-      resultadoExecucao = await processarComandos(usuarioId, respostaIa.comandos);
+    // Após o loop, executa os comandos finais se houver
+    if (!respostaIa.processar_novamente && respostaIa.comandos && respostaIa.comandos.length > 0) {
+        console.log("Executando comandos finais no banco de dados...");
+        await processarComandos(usuarioId, respostaIa.comandos);
     }
 
-    // 7. Salva a conversa final no cache
+    // Salva a interação no cache e envia a resposta para o usuário
     if (respostaIa?.mensagem) {
+      console.log("Salvando no cache e enviando resposta para o WhatsApp...");
       await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
       await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
     }
 
-    // 8. Retorna a mensagem final da IA
     return respostaIa.mensagem;
 
   } catch (error) {
-    console.error("Erro ao processar mensagem recebida:", error);
-    throw error;
+    console.error("Erro detalhado em processaMensagemRecebida:", error);
+    // Retorna uma mensagem de erro genérica para o usuário final
+    return "Ops, algo deu errado aqui dentro. 🤯 Já estou verificando o que aconteceu. Tente novamente em um instante.";
   }
 }
 
-async function AcessaBD(usuarioId, jsonIa) {
+/**
+ * Função auxiliar para encapsular a chamada ao banco de dados.
+ */
+async function AcessaBD(usuarioId, comandos) {
   try {
-    const resultado = await processarComandos(usuarioId, jsonIa);
+    const resultado = await processarComandos(usuarioId, comandos);
+    console.log("✅ Dados do BD acessados com sucesso.");
     return resultado;
   } catch (error) {
-    console.error("Erro ao acessar o banco de dados:", error);
+    console.error("❌ Erro ao acessar o banco de dados via AcessaBD:", error);
+    return { erro: "Falha ao buscar dados no banco.", detalhes: error.message };
   }
 }
 
+/**
+ * Função para enviar a mensagem final via API do WhatsApp.
+ */
 async function enviarRespostaMsgWhats(numero, mensagem) {
-  const url = `${process.env.URL_WHATS_API}/enviar`;
+  // Descomente e preencha a URL real da sua API
+  // const url = `${process.env.URL_WHATS_API}/enviar`;
+  console.log(`\n--- SIMULANDO ENVIO PARA WHATSAPP ---`);
+  console.log(`Destinatário: ${numero}`);
+  console.log(`Mensagem: ${mensagem}`);
+  console.log(`-------------------------------------\n`);
+
+  /*
   try {
-    await axios.post(url, { numero, mensagem }, { headers: { "Content-Type": "application/json" } });
-    console.log("✅ Mensagem enviada com sucesso");
+    // AINDA NÃO DESCOMENTE ESTA PARTE, vamos primeiro validar a lógica pelos logs.
+    // await axios.post(url, { numero, mensagem }, { headers: { "Content-Type": "application/json" } });
+    // console.log("✅ Mensagem enviada com sucesso para a API do Whats.");
   } catch (erro) {
     console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
   }
+  */
 }
 
-// Função que conecta no banco e inicia o servidor
+/**
+ * Função principal que inicia o servidor.
+ */
 async function startServer() {
   try {
     await conectarDB();
@@ -146,7 +189,7 @@ async function startServer() {
       console.log(`🚀 API Backend rodando em http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("Erro ao conectar no banco:", err);
+    console.error("❌ Falha crítica ao conectar no banco:", err);
     process.exit(1);
   }
 }
