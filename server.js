@@ -59,106 +59,81 @@ app.post("/recebe-mensagem", async (req, res) => {
 
 async function processaMensagemRecebida(usuarioId, mensagemInicial) {
   try {
-    // 1. Lê histórico do usuário já formatado
+    // 1. Início: Lê o histórico e o contexto de uma ação anterior, se existir.
     let historico = await ler_cache(usuarioId);
+    let contextoAcao = await ler_e_limpar_contexto_temporario(usuarioId);
+
     let processarNovamente = true;
     let respostaIa = null;
     let dadosBanco = null;
+    let contador = 1;
 
-    let contador = 1
-    let contextoAcao = await ler_e_limpar_contexto_temporario(usuarioId);
-
-    // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
+    // 2. Loop de conversação com a IA
     while (processarNovamente) {
-      // --- LÓGICA MODIFICADA PARA MONTAR O PROMPT ---
+      console.log(`🔄 Iteração IA : ${contador++}`);
       let mensagemFinalParaIa;
 
-      console.log(`🔄 Iteração IA : ${contador++}`);
-
-      // Se já temos dados do banco, significa que estamos na segunda volta do loop para formatar um relatório.
-      // Neste caso, montamos o prompt SEM o histórico para forçar a IA a usar apenas os dados.
-      // NOVO CÓDIGO
+      // Monta o prompt para a IA
       if (dadosBanco) {
-        // A lógica agora preserva o objetivo original da IA
+        // Se temos dados do banco, é a Etapa 2 (Apresentar/Confirmar)
         console.log("Montando prompt SEM histórico, mas com contexto da ação.");
         mensagemFinalParaIa = `
             A mensagem original do usuário era: "${mensagemInicial}"
-
             Você solicitou os dados abaixo para continuar uma tarefa de múltiplos passos (como corrigir ou remover um gasto).
-
             Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
-
-            IA, continue a tarefa que você começou. Analise os 'Dados do Banco' e siga as regras.
-            IA:
+            IA, continue a tarefa que você começou. Analise os 'Dados do Banco' e siga as regras do seu prompt principal.
         `;
       } else {
-        // Se não temos dados do banco, é a primeira chamada. Enviamos o histórico normalmente.
+        // Se não, é a Etapa 1 (Intenção inicial do usuário)
         console.log("Montando prompt COM histórico para interpretação inicial.");
         mensagemFinalParaIa = `
             Histórico do usuário: 
             ${JSON.stringify(historico, null, 2)}
-
             ${contextoAcao ? `Contexto da Ação Anterior (use estes IDs): ${JSON.stringify(contextoAcao)}` : ""}
-
             Mensagem atual do usuário: ${mensagemInicial}
-            IA:
         `;
       }
-      console.log("-------------------------------------------------------------------");
-      console.log("Prompt enviado para IA:", mensagemFinalParaIa);
-      console.log("-------------------------------------------------------------------");
-      // --- FIM DA LÓGICA MODIFICADA ---
 
-      // 4. Envia para IA processar
+      // 4. Envia para a IA e obtém a resposta
       respostaIa = await processarMensagemIA(mensagemFinalParaIa);
-      console.log("-------------------------------------------------------------------");
-      console.log("Resposta da IA:", respostaIa);
-      console.log("-------------------------------------------------------------------");
       if (!respostaIa) {
         throw new Error("IA não retornou resposta válida.");
       }
+       console.log("-------------------------------------------------------------------");
+       console.log("Resposta da IA:", respostaIa);
+       console.log("-------------------------------------------------------------------");
 
-
-      // 5. Se IA retornar processar_novamente = true, buscamos dados no banco
-      // CÓDIGO CORRIGIDO
-if (respostaIa.processar_novamente) {
-    // Se a IA quer re-processar E enviou comandos, buscamos os dados no banco.
-    if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-        dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
-        console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
-        processarNovamente = true; // Continua o loop para a etapa de formatação.
-    } else {
-        // Se a IA quer re-processar mas NÃO enviou comandos,
-        // significa que ela está apenas fazendo uma pergunta ou confirmação.
-        // Devemos parar o loop e enviar a pergunta ao usuário.
+      // 5. Bloco de Decisão: O que fazer com a resposta da IA?
+      if (respostaIa.processar_novamente) {
+        // Se a IA precisa de mais dados do banco para continuar...
+        if (respostaIa.comandos && respostaIa.comandos.length > 0) {
+          dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
+          // Guarda o contexto para a próxima iteração ou a próxima mensagem do usuário
+          await salvar_contexto_temporario(usuarioId, dadosBanco);
+          processarNovamente = true; // Continua o loop
+        } else {
+          // Se a IA só fez uma pergunta (sem pedir dados), saímos do loop para esperar a resposta do usuário.
+          processarNovamente = false;
+        }
+      } else {
+        // Se a IA disse que terminou, saímos do loop.
         processarNovamente = false;
-    }
-} else {
-    // IA confirmou que está pronta para executar ou já finalizou.
-    processarNovamente = false;
-}
+      }
     }
 
-    // 6. Quando a IA confirma (processar_novamente = false), executa comandos
-    // NOVO CÓDIGO
+    // 6. Execução Final: Após o fim da conversa com a IA.
+    // Se a resposta final da IA contém comandos, eles são executados aqui.
     if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-        dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
-        console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
-
-        // Salva proativamente o resultado da busca no contexto.
-        // Assim, se o usuário pedir para apagar/corrigir algo da lista, os IDs estarão disponíveis.
-        await salvar_contexto_temporario(usuarioId, dadosBanco);
-
-        processarNovamente = true; // Continua o loop para a etapa de formatação.
+      console.log('✅ Executando comandos finais da IA...');
+      await AcessaBD(usuarioId, respostaIa.comandos);
     }
 
-    // 7. Salva a conversa final no cache e envia a resposta
+    // 7. Envio e Salvamento: Envia a mensagem final para o usuário e guarda no histórico.
     if (respostaIa?.mensagem) {
       await guarda_dados(usuarioId, mensagemInicial, respostaIa.mensagem);
       await enviarRespostaMsgWhats(usuarioId, respostaIa.mensagem);
     }
 
-    // 8. Retorna a mensagem final da IA
     return respostaIa.mensagem;
 
   } catch (error) {

@@ -43,11 +43,16 @@ async function adicionarReceita(usuarioId, comando) {
   return await nova.save();
 }
 
-// Remover gasto
+// Remover gasto (MODO SEGURO)
 async function removerGasto(usuarioId, comando) {
-  const filtro = { usuarioId, item: comando.item, tipo: 'Despesa' };
-  const resultado = await Registro.deleteMany(filtro);
-  return resultado;
+  // Esta verificação garante que a IA nunca tente apagar sem um ID real.
+  if (!comando.id || typeof comando.id !== 'string' || !mongoose.Types.ObjectId.isValid(comando.id)) {
+    console.error('Tentativa de remoção com ID inválido:', comando.id);
+    return { sucesso: false, erro: 'ID do registo é inválido ou não fornecido.' };
+  }
+  const filtro = { usuarioId, _id: comando.id };
+  const resultado = await Registro.deleteOne(filtro);
+  return { sucesso: true, detalhes: resultado };
 }
 
 // Corrigir gasto (necessário enviar "id")
