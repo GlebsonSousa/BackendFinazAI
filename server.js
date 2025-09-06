@@ -88,7 +88,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
 
             Dados do Banco: ${JSON.stringify(dadosBanco, null, 2)}
 
-            IA, continue a tarefa que você começou. Analise os 'Dados do Banco' e siga as regras do 'FLUXO OBRIGATÓRIO PARA CORREÇÃO E REMOÇÃO' do seu prompt principal para pedir a confirmação do usuário antes de executar a ação final. NÃO gere um relatório genérico.
+            IA, continue a tarefa que você começou. Analise os 'Dados do Banco' e siga as regras.
             IA:
         `;
       } else {
