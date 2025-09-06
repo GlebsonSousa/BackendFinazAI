@@ -3,13 +3,15 @@ const Registro = require('../models/registro');
 
 // Conexão com o MongoDB
 async function conectarDB() {
-  if (mongoose.connection.readyState === 1) return;
+  if (mongoose.connection.readyState === 1) return; // já conectado
   try {
-    await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+    await mongoose.connect(
+      'mongodb+srv://glebsonsalmeida:conecta@ravicluster.keccztf.mongodb.net/raviDB?retryWrites=true&w=majority&appName=RaviCluster',
+      { serverSelectionTimeoutMS: 5000 }
+    );
     console.log('✅ Conectado ao DB!');
   } catch (err) {
     console.error('❌ Erro ao conectar ao DB: ', err.message);
-    process.exit(1);
   }
 }
 
@@ -41,8 +43,9 @@ async function adicionarReceita(usuarioId, comando) {
   return await nova.save();
 }
 
-// Remover gasto (MODO SEGURO - APENAS POR ID)
+// Remover gasto (MODO SEGURO)
 async function removerGasto(usuarioId, comando) {
+  // Esta verificação garante que a IA nunca tente apagar sem um ID real.
   if (!comando.id || typeof comando.id !== 'string' || !mongoose.Types.ObjectId.isValid(comando.id)) {
     console.error('Tentativa de remoção com ID inválido:', comando.id);
     return { sucesso: false, erro: 'ID do registo é inválido ou não fornecido.' };
@@ -52,17 +55,14 @@ async function removerGasto(usuarioId, comando) {
   return { sucesso: true, detalhes: resultado };
 }
 
-// Corrigir gasto
+// Corrigir gasto (necessário enviar "id")
 async function corrigirGasto(usuarioId, comando) {
-  if (!comando.id || !mongoose.Types.ObjectId.isValid(comando.id)) {
-    return { sucesso: false, erro: 'ID do registo é inválido ou não fornecido.' };
+  if (!comando.id) {
+    return { sucesso: false, erro: 'ID do registro é necessário para corrigir' };
   }
   const filtro = { usuarioId, _id: comando.id };
-  const atualizacao = {};
-  if (comando.valor != null) atualizacao.valor = comando.valor;
-  if (comando.item) atualizacao.item = comando.item;
-  
-  const resultado = await Registro.updateOne(filtro, { $set: atualizacao });
+  const atualizacao = { valor: comando.valor };
+  const resultado = await Registro.updateOne(filtro, atualizacao);
   return { sucesso: true, detalhes: resultado };
 }
 
@@ -72,12 +72,15 @@ async function gerarRelatorio(usuarioId, tipo, referencia_data) {
   const dataRef = referencia_data ? new Date(referencia_data) : new Date();
 
   switch (tipo) {
-    case 'diario':
-      const inicioDia = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), dataRef.getUTCDate()));
+     case 'diario':
+      // Constrói a data de referência em UTC para evitar problemas de fuso horário
+      const dataRefUTCdia = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), dataRef.getUTCDate()));
+      const inicioDia = dataRefUTCdia;
       const fimDia = new Date(inicioDia);
       fimDia.setUTCDate(fimDia.getUTCDate() + 1);
       query.data = { $gte: inicioDia, $lt: fimDia };
       break;
+
     case 'semanal':
       const dataRefUTCsemana = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), dataRef.getUTCDate()));
       const diaDaSemana = dataRefUTCsemana.getUTCDay();
@@ -87,27 +90,30 @@ async function gerarRelatorio(usuarioId, tipo, referencia_data) {
       fimSemana.setUTCDate(fimSemana.getUTCDate() + 7);
       query.data = { $gte: inicioSemana, $lt: fimSemana };
       break;
+
     case 'mensal':
+      // Usa métodos UTC para garantir que o fuso horário não interfira
       const inicioMes = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth(), 1));
       const fimMes = new Date(Date.UTC(dataRef.getUTCFullYear(), dataRef.getUTCMonth() + 1, 1));
       query.data = { $gte: inicioMes, $lt: fimMes };
       break;
+
     case 'anual':
       const inicioAno = new Date(Date.UTC(dataRef.getUTCFullYear(), 0, 1));
       const fimAno = new Date(Date.UTC(dataRef.getUTCFullYear() + 1, 0, 1));
       query.data = { $gte: inicioAno, $lt: fimAno };
       break;
   }
-  const registros = await Registro.find(query).sort({ data: 1 });
+  const registros = await Registro.find(query);
 
+  // Retornar apenas campos que a IA pode usar
   return registros.map(d => ({
-    id: d._id.toString(), // Garante que o ID é uma string
+    id: d._id,
     item: d.item,
     valor: d.valor,
     quantidade: d.quantidade,
     categoria: d.categoria,
-    data: d.data,
-    tipo: d.tipo // Adicionado tipo para diferenciar gastos de receitas
+    data: d.data
   }));
 }
 

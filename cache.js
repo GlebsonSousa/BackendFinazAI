@@ -77,9 +77,50 @@ async function ler_cache(usuarioId) {
   }
 }
 
+async function salvar_contexto_temporario(usuarioId, contexto) {
+    try {
+        let historico = {};
+        // ... (lógica para ler o cache.json)
+        const data = await fs.readFile(filePath, 'utf-8');
+        historico = data ? JSON.parse(data) : {};
+
+        if (!historico[usuarioId]) {
+            historico[usuarioId] = { id: usuarioId, conversas: [] };
+        }
+
+        // Adiciona ou substitui o contexto
+        historico[usuarioId].contextoAcao = contexto;
+
+        await fs.writeFile(filePath, JSON.stringify(historico, null, 2), 'utf-8');
+    } catch (error) {
+        console.log('Erro ao salvar contexto temporário:', error);
+    }
+}
+
+async function ler_e_limpar_contexto_temporario(usuarioId) {
+    try {
+        let historico = {};
+        // ... (lógica para ler o cache.json)
+        const data = await fs.readFile(filePath, 'utf-8');
+        historico = data ? JSON.parse(data) : {};
+
+        if (historico[usuarioId] && historico[usuarioId].contextoAcao) {
+            const contexto = historico[usuarioId].contextoAcao;
+            delete historico[usuarioId].contextoAcao; // Limpa o contexto após o uso
+            await fs.writeFile(filePath, JSON.stringify(historico, null, 2), 'utf-8');
+            return contexto;
+        }
+        return null;
+    } catch (error) {
+        console.log('Erro ao ler contexto temporário:', error);
+        return null;
+    }
+}
 
 
 module.exports = {
     guarda_dados,
-    ler_cache
+    ler_cache,
+    salvar_contexto_temporario, 
+    ler_e_limpar_contexto_temporario 
 }
