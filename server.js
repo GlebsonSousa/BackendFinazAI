@@ -140,9 +140,16 @@ if (respostaIa.processar_novamente) {
     }
 
     // 6. Quando a IA confirma (processar_novamente = false), executa comandos
+    // NOVO CÓDIGO
     if (respostaIa.comandos && respostaIa.comandos.length > 0) {
-        console.log('✅ Executando comandos finais da IA...');
-        await AcessaBD(usuarioId, respostaIa.comandos);
+        dadosBanco = await AcessaBD(usuarioId, respostaIa.comandos);
+        console.log("🔄 Dados do BD retornados para IA:", dadosBanco);
+
+        // Salva proativamente o resultado da busca no contexto.
+        // Assim, se o usuário pedir para apagar/corrigir algo da lista, os IDs estarão disponíveis.
+        await salvar_contexto_temporario(usuarioId, dadosBanco);
+
+        processarNovamente = true; // Continua o loop para a etapa de formatação.
     }
 
     // 7. Salva a conversa final no cache e envia a resposta
