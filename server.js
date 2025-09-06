@@ -5,7 +5,7 @@ const axios = require("axios");
 const { processarComandos } = require("./utils/processa_comandos");
 const { conectarDB } = require("./utils/banco");
 const { processarMensagemIA } = require("./IA/server_ia");
-const { ler_cache, guarda_dados } = require("./Cache/cache");
+const { ler_cache, guarda_dados, salvar_contexto_temporario, ler_e_limpar_contexto_temporario } = require("./Cache/cache");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +66,7 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
     let dadosBanco = null;
 
     let contador = 1
+    let contextoAcao = await ler_e_limpar_contexto_temporario(usuarioId);
 
     // 2. Loop iterativo até a IA decidir que todos os dados estão prontos
     while (processarNovamente) {
@@ -77,6 +78,9 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
       // Se já temos dados do banco, significa que estamos na segunda volta do loop para formatar um relatório.
       // Neste caso, montamos o prompt SEM o histórico para forçar a IA a usar apenas os dados.
       if (dadosBanco) {
+
+        await salvar_contexto_temporario(usuarioId, dadosBanco);
+
         console.log("Montando prompt SEM histórico para formatação de relatório.");
         mensagemFinalParaIa = `
             Mensagem original do usuário: ${mensagemInicial}
@@ -93,11 +97,10 @@ async function processaMensagemRecebida(usuarioId, mensagemInicial) {
             Histórico do usuário: 
             ${JSON.stringify(historico, null, 2)}
 
+            ${contextoAcao ? `Contexto da Ação Anterior (use estes IDs): ${JSON.stringify(contextoAcao)}` : ""}
+
             Mensagem atual do usuário: ${mensagemInicial}
-
-            ${dadosBanco ? `Dados do Banco: ${JSON.stringify(dadosBanco)}` : ""}
-
-          IA:
+            IA:
         `;
       }
       console.log("-------------------------------------------------------------------");
