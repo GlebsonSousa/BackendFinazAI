@@ -153,12 +153,21 @@ async function AcessaBD(usuarioId, jsonIa) {
 }
 
 async function enviarRespostaMsgWhats(numero, mensagem) {
+  // A URL agora aponta para o endpoint /enviar da sua API Gateway.
   const url = `${process.env.URL_WHATS_API}/enviar`;
+  
+  console.log(`➡️  Enviando resposta para o Gateway: ${url}`);
+
   try {
-    await axios.post(url, { numero, mensagem }, { headers: { "Content-Type": "application/json" } });
-    console.log("✅ Mensagem enviada com sucesso");
+    // O corpo da requisição { numero, mensagem } é o formato que a sua API Gateway espera.
+    await axios.post(url, {
+      numero: numero,
+      mensagem: mensagem
+    });
+    console.log("✅ Resposta enviada com sucesso para o seu Gateway.");
   } catch (erro) {
-    console.error("❌ Erro ao enviar mensagem para API Whats:", erro.message);
+    // Este erro agora mostrará se houve falha ao comunicar com a sua própria API Gateway.
+    console.error("❌ Erro ao enviar mensagem para o Gateway:", erro.response ? erro.response.data : erro.message);
   }
 }
 
